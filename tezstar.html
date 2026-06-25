@@ -1,0 +1,3011 @@
+
+
+<!DOCTYPE html>
+<html class="header-tabs">
+  <head>
+    <meta charset="utf-8">
+    <title>TezStar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="MobileOptimized" content="176" />
+    <meta name="HandheldFriendly" content="True" />
+    <!-- Critical CSS files - loaded immediately and blocking for faster rendering -->
+    <link href="/static/css/font-roboto.css?v=1" rel="stylesheet" type="text/css" media="all">
+    <link href="/static/css/bootstrap.min.css?v=3" rel="stylesheet" media="all">
+    <link href="/static/css/bootstrap-extra.css?v=2" rel="stylesheet" media="all">
+    <link href="/static/css/auction.css?v=100" rel="stylesheet" media="all">
+    <link rel="preload" as="fetch" href="/static/stickers/loading-animation.tgs" crossorigin="anonymous" />
+    <link rel="preload" as="image" href="/static/images/TezStar-channel-logo.jpg" />
+    <link rel="preload" as="image" href="/static/images/major-badge.jpeg" />
+    <link rel="preload" as="image" href="/static/images/major-badge.svg" />
+    <style>
+      /* Loading modal - shown until content is fully loaded */
+      #page-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: var(--bg-color, #1a1a1a);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+      }
+      #page-loading.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      #page-loading-sticker {
+        width: 200px;
+        height: 200px;
+        margin: 0 auto;
+      }
+      /* Hide main content until loading is complete */
+      body:not(.content-loaded) #aj_content {
+        visibility: hidden;
+        opacity: 0;
+      }
+      body.content-loaded #aj_content {
+        visibility: visible;
+        opacity: 1;
+        transition: opacity 0.3s ease-in;
+      }
+      #aj_content {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        justify-content: center;
+        align-items: center;
+        background: var(--bg-color);
+      }
+      .preview-sender-text {
+        font-size: 11px !important;
+      }
+      /* First-time language modal (bottom sheet) */
+      .lang-modal{ position:fixed; inset:0; display:none; z-index:2200; }
+      .lang-modal.open{ display:block; }
+      .lang-overlay{ position:absolute; inset:0; background:rgba(0,0,0,.78); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+      .lang-sheet{ position:absolute; left:0; right:0; bottom:0; background:var(--bg-color); color:var(--telegram-text_color,#e6edf3); border-top:1px solid rgba(255,255,255,.06); border-radius:16px 16px 0 0; box-shadow:0 -14px 42px rgba(0,0,0,.45); padding:12px 14px calc(10px + var(--safe-area-inset-bottom, 0px)); transform:translateY(100%); transition:transform .45s cubic-bezier(.32,.72,0,1); max-height: calc(100vh - 20px); }
+      .lang-modal.open .lang-sheet{ transform:translateY(0%); }
+      .lang-close{ position:absolute; right:16px; top:16px; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--wallet-tertiary_fill_background, rgba(118,118,128,.24)); cursor:pointer; border:none; outline:none; -webkit-tap-highlight-color:transparent; z-index:10; }
+      .lang-close:hover{ background:rgba(255,255,255,.12); }
+      .lang-close:active{ transform:scale(.98); }
+      .lang-close svg{ display:none; }
+      .lang-close::before, .lang-close::after{ content:""; position:absolute; width:14px; height:2px; background: var(--telegram-subtitle_text_color, #9aa3ad); border-radius:2px; }
+      .lang-close::before{ transform:rotate(45deg); }
+      .lang-close::after{ transform:rotate(-45deg); }
+      .lang-title{ font-weight:800; font-size:20px; text-align:center; margin:2px 0 4px; }
+      .lang-sub{ text-align:center; opacity:.95; margin:0 8px 6px; font-size:13px; }
+      .lang-desc{ text-align:center; opacity:.8; margin:0 8px 6px; font-size:13px; }
+      .lang-options{ display:grid; gap:6px; margin:4px 0 6px; }
+      .lang-opt{ display:flex; align-items:center; gap:12px; padding:8px 12px; border-radius:var(--def-border-radius, 20px); background: var(--field-bg-color); cursor:pointer; border:1px solid transparent; }
+      .lang-opt:hover{ background:rgba(255,255,255,.06); }
+      .lang-opt.active{ border-color: rgba(51,144,236,.35); background:rgba(51,144,236,.08); box-shadow: 0 0 0 2px var(--accent-color); }
+      .lang-radio{ width:22px; height:22px; border-radius:50%; border:2px solid var(--telegram-subtitle_text_color, #999); display:grid; place-items:center; flex:0 0 auto; }
+      .lang-radio::after{ content:""; width:10px; height:10px; border-radius:50%; background:transparent; }
+      .lang-opt.active .lang-radio{ border-color: var(--telegram-link_color,#3390ec); }
+      .lang-opt.active .lang-radio::after{ background: var(--telegram-link_color,#3390ec); }
+      .lang-label{ display:flex; flex-direction:column; }
+      .lang-label-title{ font-weight:800; font-size:16px; line-height:18px; color: var(--telegram-text_color,#e6edf3); }
+      .lang-label-sub{ font-size:12px; opacity:.85; color: var(--text-color); margin-top:2px; }
+      .lang-foot{ text-align:center; opacity:.7; font-size:12px; margin-top:4px; padding-bottom:2px; }
+      body.lang-modal-open{ overflow:hidden; }
+      /* MainButton is used for confirm */
+
+    .tm-form-radio-label .tm-value{ width:105px !important; }
+    [data-allow-selection="true"]{
+      -webkit-user-select:text !important;
+      user-select:text !important;
+    }
+    body.channel-modal-open{ overflow:hidden; }
+    .channel-modal{ position:fixed; inset:0; display:none; z-index:2100; }
+    .channel-modal.open{ display:block; }
+    .channel-overlay{
+      position:absolute; inset:0;
+      background:rgba(1,4,12,.7);
+      backdrop-filter:blur(8px);
+      -webkit-backdrop-filter:blur(8px);
+    }
+    .channel-sheet{
+      position:absolute;
+      left:0;
+      right:0;
+      bottom:0;
+      margin:0 auto;
+      max-width:420px;
+      border-radius:28px 28px 0 0;
+      overflow:hidden;
+      background:linear-gradient(180deg, rgba(12,22,45,.94) 0%, rgba(8,15,31,.97) 75%, rgba(5,10,22,.98) 100%);
+      box-shadow:0 -20px 60px rgba(0,0,0,.35);
+      color:#fff;
+      transform:translateY(100%);
+      transition:transform .45s cubic-bezier(.32,.72,0,1);
+    }
+    .channel-modal.open .channel-sheet{
+      transform:translateY(0);
+    }
+    .channel-sheet::before{ content:none; }
+    .channel-sheet::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:radial-gradient(circle at 30% 0%, rgba(64,162,255,.55), transparent 60%),
+                 radial-gradient(circle at 80% 10%, rgba(255,196,67,.4), transparent 50%);
+      z-index:1;
+    }
+    .channel-card{
+      position:relative;
+      z-index:2;
+      padding:26px 22px calc(24px + var(--safe-area-inset-bottom,0px));
+    }
+    .channel-close{
+      position:absolute;
+      top:18px;
+      right:18px;
+      width:38px;
+      height:38px;
+      border:none;
+      border-radius:50%;
+      background:rgba(0,0,0,.32);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+      z-index:10;
+      pointer-events:auto;
+    }
+    .channel-close:before,
+    .channel-close:after{
+      content:"";
+      position:absolute;
+      width:16px;
+      height:2px;
+      background:#fff;
+      border-radius:2px;
+    }
+    .channel-close:before{ transform:rotate(45deg); }
+    .channel-close:after{ transform:rotate(-45deg); }
+    .channel-pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:6px 14px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      letter-spacing:.08em;
+      background:rgba(0,0,0,.35);
+      color:#fff;
+      margin-bottom:18px;
+    }
+    .channel-hero{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .channel-hero-logo{
+      width:80px;
+      height:80px;
+      border-radius:50%;
+      background:rgba(255,255,255,.15);
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      box-shadow:0 12px 26px rgba(0,0,0,.35);
+    }
+    .channel-hero-logo img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+    .channel-hero-text{
+      flex:1;
+      font-size:20px;
+      font-weight:800;
+      line-height:1.3;
+      display:flex;
+      align-items:center;
+      gap:0.25rem;
+    }
+    .channel-hero-text .channel-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex-shrink:0;
+    }
+    .channel-hero-text .channel-badge img{
+      width:24px;
+      height:24px;
+      object-fit:contain;
+      display:block;
+      vertical-align:middle;
+    }
+    .channel-hero-text span{
+      display:inline-block;
+      vertical-align:middle;
+      line-height:1.3;
+    }
+    .channel-title{
+      font-size:20px;
+      font-weight:800;
+      margin-bottom:6px;
+    }
+    .channel-sub{
+      font-size:14px;
+      line-height:1.6;
+      opacity:.9;
+      color:var(--telegram-subtitle_text_color,#ccd3e1);
+    }
+    .channel-cta{
+      width:100%;
+      margin-top:22px;
+      height:50px;
+      border:none;
+      border-radius:18px;
+      background:var(--btn-primary-bg-color);
+      color: var(--btn-primary-color);
+      font-weight:700;
+      font-size:15px;
+      box-shadow:0 16px 34px rgba(255,167,81,.35);
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+    }
+    .channel-cta::before{
+      content:'';
+      position:absolute;
+      top:0;
+      left:-120%;
+      width:120%;
+      height:100%;
+      background:linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255,255,255,.55) 45%,
+        rgba(255,255,255,.35) 55%,
+        transparent 100%
+      );
+      opacity:.85;
+      animation:channel-shine 1.8s infinite;
+      pointer-events:none;
+    }
+    @keyframes channel-shine{
+      0%{ left:-120%; }
+      60%{ left:120%; }
+      100%{ left:120%; }
+    }
+    </style>
+    
+    <style>
+    .tm-header-fixed {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--bg-color, #1a1a1a);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+    .tm-profile-section {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      width: 100%;
+      gap: 12px;
+    }
+    .tm-profile-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .tm-profile-avatar-placeholder {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+    }
+    /* Wallet-like segmented control */
+    .tm-segmented {
+      display: grid;
+      grid-auto-columns: 1fr;
+      grid-auto-flow: column;
+      position: relative;
+      justify-self: center;
+      height: 36px;
+      padding: 2px;
+      border-radius: 18px;
+      background-color: var(--tertiary-fill-background, rgba(123,123,123,.24));
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      overflow: hidden;
+      min-width: 152px;
+    }
+    .tm-seg-indicator{
+      position: absolute;
+      inset: 2px;
+      height: calc(100% - 4px);
+      width: 50%;
+      border-radius: 16px;
+      background: var(--segmented-control-active-background, #ffffff);
+      border: .5px solid #0000000a;
+      transform: translateX(0%);
+      transition: transform .2s ease, width .2s ease, background-color .2s ease;
+      z-index: 1;
+      will-change: transform, background-color, width;
+    }
+    .tm-seg-item{
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 14px;
+      border: 0;
+      background: transparent;
+      color: var(--tg-theme-text-color, #fff);
+      font-family: Roboto,system-ui,sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      line-height: 16px;
+      height: 100%;
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tm-seg-item:focus,
+    .tm-seg-item:focus-visible,
+    .tm-seg-item:active{ outline: none !important; box-shadow: none !important; }
+    .tm-seg-item[aria-checked="true"]{ 
+      opacity: 1; 
+      color: #000;
+    }
+    .tm-seg-item[aria-checked="false"]{ 
+      opacity: .8; 
+      color: var(--tg-theme-text-color, #fff);
+    }
+    .tm-language-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: #fff;
+    }
+    .tm-language-current {
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    
+    /* Sticker Elements Section */
+    .tm-sticker-elements {
+      padding: 0px 16px 0px;
+      margin-top: 0px;
+    }
+    .tm-sticker-content {
+      min-height: 150px;
+    }
+    .tm-sticker-grid {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .tm-sticker-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .tm-sticker-wrapper {
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .tm-sticker {
+      width: 90px;
+      height: 90px;
+      transition: all 0.3s ease;
+    }
+    .tm-sticker-label {
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0.8;
+      text-align: center;
+    }
+    .tm-tab-images-section {
+      padding: 20px 16px;
+      margin-top: 0;
+    }
+    .tm-tab-image-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .tm-tab-image {
+      max-width: 70%;
+      height: auto;
+      border-radius: 12px;
+      object-fit: contain;
+    }
+    .tm-tab-video {
+      max-width: 70%;
+      height: auto;
+      border-radius: 12px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+      background: transparent;
+    }
+    .tm-tab-video img {
+      display: none;
+      max-width: 70%;
+      height: auto;
+      border-radius: 12px;
+      object-fit: contain;
+      margin: 0 auto;
+    }
+    .tm-tab-video[poster] {
+      background-image: var(--poster-image);
+    }
+    .tm-main-premium-intro {
+      padding-top: 0px !important;
+      margin-top: 0px !important;
+    }
+
+/* --- Tabs: no yellow focus ring / tap highlight --- */
+.tm-profile-tab {
+  outline: none !important;
+  border: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent; /* Android/MIUI WebView */
+}
+
+/* Brauzerlar orasida ishonchli o‘chirish */
+.tm-profile-tab:focus,
+.tm-profile-tab:focus-visible,
+.tm-profile-tab:active {
+  outline: none !important;
+  box-shadow: none !important; /* agar fokus soyasi bo'lsa */
+}
+
+/* Firefox’ning ichki fokus chizig‘i */
+.tm-profile-tab::-moz-focus-inner {
+  border: 0 !important;
+}
+
+/* Konteynerga ham highlight tushmasin */
+.tm-profile-tabs {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Agar qayerdadir tasodifan qo‘yilgan bo‘lsa, aktivda ham border bo‘lmasin */
+.tm-profile-tab-active {
+  border: none !important;
+}
+
+/* cleanup stray lines */
+    </style>
+    
+  </head>
+  <body class="emoji_image no-transition">
+    <!-- Loading modal - shown until content is fully loaded -->
+    <div id="page-loading">
+      <div id="page-loading-sticker"></div>
+    </div>
+    <div id="channelGateModal" class="channel-modal" data-join-url="" aria-hidden="true">
+      <div class="channel-overlay" id="channelOverlay"></div>
+      <div class="channel-sheet">
+        <button type="button" class="channel-close" aria-label="Close"></button>
+        <div class="channel-card">
+          <div class="channel-pill">@tezstar</div>
+          <div class="channel-hero">
+            <div class="channel-hero-logo">
+              <img src="/static/images/TezStar-channel-logo.jpg" alt="channel">
+            </div>
+            <div class="channel-hero-text">
+              <div class="channel-badge">
+                <img id="channelBadgeImg" src="/static/images/major-badge.jpeg" alt="Badge" />
+              </div>
+              <span>Tez Star Community</span>
+            </div>
+          </div>
+          <div class="channel-title">Kanalimizga qo'shiling</div>
+          <div class="channel-sub">Yangi giveaway'lar, aksiyalar va muhim yangiliklarni o'tkazib yubormaslik uchun kanalimizga a'zo bo'ling.</div>
+          <button type="button" class="channel-cta">Kanalga qo'shilish</button>
+        </div>
+      </div>
+    </div>
+    
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;left:-10000px">
+  <defs>
+    <path id="icon-premium" d="m8.88 13.45 2.89-5.71c.33-.66 1.14-.93 1.8-.6.25.13.46.35.59.61l2.73 5.51c.22.45.66.76 1.16.82l5.7.68c.78.09 1.33.79 1.24 1.57-.04.31-.18.61-.41.84l-4.52 4.42c-.18.18-.27.43-.23.68l.75 5.98c.1.85-.5 1.63-1.36 1.74-.32.04-.65-.02-.94-.18l-4.77-2.59c-.34-.19-.76-.19-1.11-.01l-4.93 2.52c-.7.35-1.55.07-1.91-.62-.13-.26-.18-.55-.14-.84l.4-2.74c.19-1.34 1.03-2.51 2.23-3.12l5.49-2.78c.15-.08.2-.26.13-.4-.06-.12-.18-.18-.31-.16l-6.71.95c-1.02.15-2.06-.14-2.87-.79l-2.23-1.82c-.64-.51-.73-1.45-.22-2.09.24-.29.59-.48.97-.53l5.73-.74c.36-.04.68-.27.85-.6z"/>
+    <path id="icon-ton-qr" d="m4.02 7h15.945c.33 0 .6.27.6.615 0 .105-.015.21-.075.3l-7.56 13.62c-.33.6-1.08.81-1.665.48-.21-.12-.375-.285-.48-.495l-7.305-13.62c-.15-.3-.045-.675.255-.825.09-.045.18-.075.285-.075zm7.98 14.67v-14.67z" fill="none" stroke="currentColor" stroke-width="2.1"/>
+
+    <path d="M 6.67 5.74 L 8.88 1.32 C 9.13 0.81 9.74 0.6 10.25 0.86 C 10.45 0.96 10.61 1.13 10.71 1.33 L 12.79 5.59 C 12.96 5.93 13.29 6.17 13.67 6.22 L 18.03 6.74 C 18.62 6.82 19.05 7.36 18.98 7.96 C 18.95 8.2 18.84 8.43 18.66 8.61 L 15.21 12.03 C 15.07 12.16 15.01 12.36 15.03 12.56 L 15.6 17.17 C 15.69 17.83 15.22 18.44 14.57 18.52 C 14.32 18.55 14.07 18.5 13.85 18.38 L 10.21 16.38 C 9.95 16.24 9.63 16.23 9.36 16.37 L 5.59 18.32 C 5.06 18.59 4.41 18.38 4.14 17.84 C 4.03 17.64 4 17.41 4.03 17.19 L 4.33 15.07 C 4.48 14.03 5.12 13.14 6.04 12.66 L 10.23 10.51 C 10.34 10.45 10.38 10.31 10.33 10.2 C 10.28 10.11 10.19 10.06 10.09 10.08 L 4.97 10.82 C 4.19 10.93 3.39 10.71 2.78 10.2 L 1.07 8.8 C 0.58 8.4 0.51 7.68 0.9 7.18 C 1.09 6.96 1.35 6.81 1.64 6.77 L 6.02 6.2 C 6.3 6.17 6.54 5.99 6.67 5.74 Z" id="icon-star"></path>
+    <linearGradient x1="25%" y1="0.825%" x2="74.92%" y2="107.86%" id="s2"><stop stop-color="#FFD951" offset="0%"></stop><stop stop-color="#FFB222" offset="100%"></stop></linearGradient>
+    <linearGradient x1="50%" y1="0%" x2="50%" y2="99.8%" id="s3"><stop stop-color="#E58F0D" offset="0%"></stop><stop stop-color="#EB7915" offset="100%"></stop></linearGradient>
+    <filter x="-5.2%" y="-5.3%" width="110.3%" height="110.6%" filterUnits="objectBoundingBox" id="s4"><feOffset dx="1" dy="1" in="SourceAlpha" result="shadowOffsetInner1"></feOffset><feComposite in="shadowOffsetInner1" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowInnerInner1"></feComposite><feColorMatrix values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.657 0" type="matrix" in="shadowInnerInner1"></feColorMatrix>
+    </filter>
+    <g id="icon-colorful-star" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+      <use fill="url(#s2)" fill-rule="evenodd" xlink:href="#icon-star"></use>
+      <use fill="#000" filter="url(#s4)" xlink:href="#icon-star"></use>
+      <use stroke="url(#s3)" stroke-width="0.89" xlink:href="#icon-star"></use>
+    </g>
+    <g id="icon-multi-star" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+      <use stroke="currentColor" stroke-width="2.67" xlink:href="#icon-star"></use>
+      <use fill="url(#s2)" fill-rule="evenodd" xlink:href="#icon-star"></use>
+      <use fill="#000" filter="url(#s4)" xlink:href="#icon-star"></use>
+      <use stroke="url(#s3)" stroke-width="0.89" xlink:href="#icon-star"></use>
+      <path d="M 5.2 19 L 14 19 L 9.8 16.7 L 5.2 19 Z" fill="currentColor"></path>
+    </g>
+    <filter id="svg-filter--filters-icon-color"><feFlood flood-color="var(--filters-icon-color)"></feFlood><feComposite in2="SourceGraphic" operator="in"></feComposite></filter>
+  </defs>
+</svg>
+
+
+    <div id="aj_content">
+    
+  <main class="tm-main tm-main-premium js-main-content" style="margin-top: -48px !important;">
+    <!-- Tab Images Section -->
+    <section class="tm-tab-images-section">
+      <div class="tm-tab-image-wrapper">
+        <video 
+          class="tm-tab-video js-lazy-video" 
+          data-src="/static/videos/telegram-stars.mp4"
+          loop 
+          muted 
+          playsinline
+          preload="none"
+          poster="/static/images/stars.webp"
+        >
+          <img src="/static/images/stars.webp" alt="Stars" class="tm-tab-image">
+        </video>
+      </div>
+    </section>
+    <section class="tm-main-intro">
+      <h1 class="tm-main-intro-header">Telegram Stars sotib olish<i class="icon icon-telegram-stars"></i></h1>
+      <p class="tm-main-intro-text">
+        O'zingiz yoki do'stlaringiz uchun Visa kartasiz Stars balansini to'ldiring.
+      </p>
+    </section>
+    
+    <form action="/stars" class="tm-section tm-main-search-form js-stars-form options-collapsed">
+      <input type="hidden" name="recipient" value="" />
+      <div class="tm-main-form-group">
+        
+        <div class="tm-main-form-label-extra tm-main-form-myself">
+          <a type="button" class="js-myself-link btn-link" data-self-username="@cysze" data-has-username="true"> O'zimga olamiz</a>
+        </div>
+        
+        <label class="tm-main-form-label">Kimga yuboramiz?</label>
+        <div class="icon-before icon-search tm-field tm-search-field js-stars-search-field">
+          <input type="search" class="form-control tm-input tm-search-input" name="query" value="" placeholder="Telegram @username kiriting…" autocomplete="off"  spellcheck="false" data-allow-selection="true" />
+          <span class="tm-search-loading"><svg class="circle-progress-wrap" viewPort="0 0 22 22" width="22px" height="22px"><circle class="circle-progress" cx="50%" cy="50%" stroke-dashoffset="62"></circle></svg></span>
+          <span class="icon-before icon-search-clear tm-search-clear js-form-clear"></span>
+          <span class="icon-before icon-search-error tm-search-error-icon"></span>
+          <span class="tm-search-field-photo js-stars-search-photo"></span>
+        </div>
+        <div class="tm-search-field-error js-search-field-error"></div>
+      </div>
+      <div class="tm-main-form-group">
+        <label class="tm-main-form-label">Telegram Yulduzlari miqdorini kiriting</label>
+        <div class="icon-before icon-stars form-control-wrap tm-coin-field js-stars-quantity-field">
+          <input type="number" inputmode="numeric" pattern="[0-9]*" min="50" max="10000" step="1" class="form-control tm-input tm-amount-input" name="quantity" value="" placeholder="50 dan 10 000 gacha miqdorni kiriting" autocomplete="off"  spellcheck="false" />
+          <span class="tm-search-loading"><svg class="circle-progress-wrap" viewPort="0 0 22 22" width="22px" height="22px"><circle class="circle-progress" cx="50%" cy="50%" stroke-dashoffset="62"></circle></svg></span>
+          <span class="tm-stars-price tm-search-rlabel js-cur-price"></span>
+          <span class="icon-before icon-search-clear tm-search-clear js-quantity-clear"></span>
+        </div>
+        <div class="tm-search-field-error js-quantity-field-error"></div>
+      </div>
+      <div class="tm-main-form-group">
+        <div class="tm-stars-options js-stars-options">
+          <label class="tm-main-form-label">
+            Yoki to‘plamni tanlang
+            
+          </label>
+          <div class="tm-form-radio-items">
+            <div class="tm-form-radio-item-wrap">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="50" checked>
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="23" height="20"><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    50 Stars
+                    <span class="tm-radio-label-badge">-5.5%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">12 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="75">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="23" height="20"><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    75 Stars
+                    <span class="tm-radio-label-badge">-5.5%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">19 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="100">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="26" height="20"><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    100 Stars
+                    <span class="tm-radio-label-badge">-5.5%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">25 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="150">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="26" height="20"><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    150 Stars
+                    <span class="tm-radio-label-badge">-5.4%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">38 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="250">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="26" height="20"><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    250 Stars
+                    <span class="tm-radio-label-badge">-4.2%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">64 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="350">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="26" height="20"><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    350 Stars
+                    <span class="tm-radio-label-badge">-4.8%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">90 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="500">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="26" height="20"><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    500 Stars
+                    <span class="tm-radio-label-badge">-2.5%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">129 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="750">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="26" height="20"><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    750 Stars
+                    <span class="tm-radio-label-badge">-2.0%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">194 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="1000">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="26" height="20"><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    <span class="thin-only">1K Stars</span><span class="wide-only">1,000 Stars</span>
+                    <span class="tm-radio-label-badge">-1.7%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">259 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="1500">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="29" height="20"><use xlink:href="#icon-multi-star" transform="translate(9,0)"></use><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    <span class="thin-only">1.5K Stars</span><span class="wide-only">1,500 Stars</span>
+                    <span class="tm-radio-label-badge">-1.4%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">389 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="2500">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="29" height="20"><use xlink:href="#icon-multi-star" transform="translate(9,0)"></use><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    <span class="thin-only">2.5K Stars</span><span class="wide-only">2,500 Stars</span>
+                    <span class="tm-radio-label-badge">-0.9%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">649 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="5000">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="29" height="20"><use xlink:href="#icon-multi-star" transform="translate(9,0)"></use><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    <span class="thin-only">5K Stars</span><span class="wide-only">5,000 Stars</span>
+                    <span class="tm-radio-label-badge">-0.9%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">1 299 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-second-option">
+              <label class="tm-form-radio-item">
+                <input type="radio" class="radio" name="stars" value="10000">
+                <div class="tm-form-radio-label">
+                  <div class="tm-radio-label">
+                    <svg class="icon" width="32" height="20"><use xlink:href="#icon-multi-star" transform="translate(12,0)"></use><use xlink:href="#icon-multi-star" transform="translate(9,0)"></use><use xlink:href="#icon-multi-star" transform="translate(6,0)"></use><use xlink:href="#icon-multi-star" transform="translate(3,0)"></use><use xlink:href="#icon-multi-star"></use></svg>
+                    <span class="thin-only">10K Stars</span><span class="wide-only">10,000 Stars</span>
+                    <span class="tm-radio-label-badge">0.0%</span>
+                  </div>
+                  <div class="tm-value tm-uzs">2 599 999,00 UZS</div>
+                </div>
+              </label>
+            </div>
+            <div class="tm-form-radio-item-wrap tm-more-options">
+              <label class="tm-form-radio-item-more js-more-options">
+                <div class="tm-form-radio-label icon-after icon-options-more">
+                  Ko‘proq variantlarni ko‘rsatish
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+    <div class="tm-section">
+      <button class="btn btn-primary btn-block js-stars-buy-btn">
+        <span class="tm-button-label js-stars-btn-label">50 Telegram Yulduzini sotib olish</span>
+      </button>
+      
+      <div class="tm-main-form-link-wrap">
+        <button type="button" class="btn-link js-safe-nav" data-url="/api/stars/history">Tranzaksiyalar tarixini ko‘rish</button>
+      </div>
+      
+    </div>
+  </main>
+  <div class="popup-container hide form-popup-container gift-premium-popup-container js-buy-stars-popup show-sender" data-close-outside="popup-body">
+    <div class="popup">
+      <div class="popup-body">
+        <div class="popup-side-icons">
+          <div class="icon-before icon-popup-close popup-cancel-btn"></div>
+        </div>
+        <section>
+          <h4>Telegram Stars sotib olish</h4>
+          <div class="js-buy-stars-content"></div>
+          <form class="js-buy-stars-form">
+            <input type="hidden" name="id" />
+            <!-- Show-sender is enforced server-side; no user control -->
+            <div class="form-main-button">
+              <button type="submit" class="btn btn-primary btn-block">
+                <span class="tm-button-label js-buy-stars-button">Buy Stars for <span class="js-recepient-first-name"></span></span>
+              </button>
+            </div>
+          </form>
+        </section>
+      </div>
+    </div>
+  </div>
+  <!-- Payment method modal (bottom sheet) -->
+  
+  <style>
+  .tm-stars-options .tm-value.tm-uzs,
+  .js-stars-quantity-field .tm-value.tm-uzs {
+    font-size: 95%;
+  }
+  /* Hide discount badges in price options - top badge is enough */
+  .tm-stars-options .tm-radio-label-badge {
+    display: none;
+  }
+  /* Remove underline from "Buy for myself" link */
+  .js-myself-link,
+  .js-myself-link:hover,
+  .js-myself-link:focus,
+  .js-myself-link:active,
+  .js-myself-link:visited {
+    text-decoration: none !important;
+  }
+  /* Truncate long names in popup with ellipsis */
+  .popup-text b {
+    display: inline-block;
+    max-width: 80%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+  .pay-modal{position:fixed;inset:0;z-index:9999;display:none}
+  .pay-modal.show{display:block}
+  .pay-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+  .pay-sheet{position:absolute;left:0;right:0;bottom:0;background:var(--bg-color);border-top-left-radius:16px;border-top-right-radius:16px;box-shadow:0 -8px 24px rgba(0,0,0,.35);padding:12px}
+  .pay-title{font-weight:900;color:var(--telegram-text_color);text-align:center;margin:4px 0 2px}
+  .pay-sub{opacity:.8;color:var(--text-color);text-align:center;font-size:12px;margin-bottom:6px}
+  .pay-options{display:grid;gap:8px;margin:10px 0}
+  .pay-opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid rgba(255,255,255,.06);background:var(--field-bg-color);border-radius:var(--def-border-radius, 20px);cursor:pointer}
+  .pay-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--telegram-subtitle_text_color, #8794a1);position:relative;display:grid;place-items:center;flex:0 0 auto}
+  .pay-opt[aria-checked="true"]{box-shadow: 0 0 0 2px var(--accent-color);}
+  .pay-opt[aria-checked="true"] .pay-radio{border-color:#3390ec}
+  .pay-opt[aria-checked="true"] .pay-radio::after{content:"";width:8px;height:8px;border-radius:50%;background:#3390ec}
+  .pay-opt img{width:32px;height:32px;border-radius:8px;object-fit:cover}
+  .pay-opt .pay-name{font-weight:800;color:var(--telegram-text_color, #e6edf3);font-size:14px}
+  .pay-actions{display:flex;justify-content:center;margin-top:6px}
+  .pay-continue{border:0;border-radius:var(--def-border-radius, 20px);padding:12px 16px;cursor:pointer;background:#3390ec;color:#fff;font-weight:800;min-width:220px}
+  .pay-foot{display:flex;flex-direction:column;align-items:center;gap:6px;margin:6px 0}
+  .pay-default{display:inline-flex;align-items:center;gap:8px;color:#e6edf3;font-size:13px;padding:4px 0;border:0;background:transparent}
+  /* Fancy checkbox (Fragment-like) */
+  .tm-form-checkbox-item{display:inline-flex;align-items:center;cursor:pointer;margin:0}
+  .tm-form-checkbox-item input.checkbox{position:absolute;opacity:0;width:0;height:0}
+  .tm-form-checkbox-label{display:block;font-size:13px;line-height:18px;padding:5px 10px;color:var(--telegram-text_color, #e6edf3);position:relative;overflow:hidden}
+  .tm-form-checkbox-item input.checkbox ~ .tm-form-checkbox-label:before{display:inline-block;flex-shrink:0;flex-grow:0;content:'';width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.4px var(--field-second-color, rgba(255,255,255,.35));background:transparent var(--image-url-checkbox-icon) center no-repeat;background-size:0%;transition:box-shadow var(--def-transition,.18s ease), background var(--def-transition,.18s ease);margin-right:9px;vertical-align:-4px}
+  .tm-form-checkbox-item input.checkbox:checked ~ .tm-form-checkbox-label:before{box-shadow:inset 0 0 0 9px var(--telegram-link_color,#3390ec);background-size:0%}
+  .tm-form-checkbox-item:active .tm-form-checkbox-label:before{box-shadow:inset 0 0 0 1.8px var(--field-second-color, rgba(255,255,255,.45))}
+  .pay-hint{opacity:.75;color:var(--telegram-text_color, #e6edf3);font-size:12px;text-align:center;display:none;margin:0}
+  </style>
+  
+  <div id="payModal" class="pay-modal" aria-hidden="true">
+    <div class="pay-overlay" id="payOverlay"></div>
+    <div class="pay-sheet">
+      <div class="pay-title">To'lov usulini tanlang</div>
+      <div class="pay-sub">Davom etish uchun provayderni tanlang</div>
+      <div class="pay-options" role="radiogroup" aria-label="Payment method">
+        <label class="pay-opt" data-method="payme" role="radio" aria-checked="true">
+          <div class="pay-radio"></div>
+          <img src="/static/images/payme-logo.webp" alt="Payme">
+          <div class="pay-name">Payme</div>
+        </label>
+        <label class="pay-opt" data-method="click" role="radio" aria-checked="false">
+          <div class="pay-radio"></div>
+          <img src="/static/images/click-up-logo.webp" alt="Click">
+          <div class="pay-name">Click</div>
+        </label>
+      </div>
+      <div class="pay-foot">
+        <label class="pay-default tm-form-checkbox-item"><input type="checkbox" class="checkbox" id="paySetDefault"><div class="tm-form-checkbox-label">Standart qilib o'rnatish</div></label>
+        <div class="pay-hint" id="payHint">Keyinroq Sozlamalarda o‘zgartirishingiz mumkin.</div>
+      </div>
+      <div class="pay-actions"><button type="button" id="payContinue" class="pay-continue">Davom etish</button></div>
+    </div>
+  </div>
+
+    <!-- First-time language picker modal (shown once) -->
+    <div id="langModal" class="lang-modal" aria-hidden="true">
+      <div class="lang-overlay" id="langOverlay"></div>
+      <div class="lang-sheet">
+        <button class="lang-close" id="langModalClose" aria-label="Close" type="button"></button>
+        <div style="text-align:center;">
+          <div style="width:112px;height:112px;margin:0 auto 8px;">
+            <div id="lang-duck" style="width:112px;height:112px;"></div>
+          </div>
+          <div class="lang-title">Tilni tanlang</div>
+          <div class="lang-sub">Ilovada ishlatmoqchi bo‘lgan tilni tanlang.</div>
+        </div>
+        <div class="lang-options" role="radiogroup" aria-label="Language">
+          <div class="lang-opt js-lang-opt" data-lang="uz" role="radio" aria-checked="false">
+            <div class="lang-radio"></div>
+            <div class="lang-label"><div class="lang-label-title">Uzbek</div><div class="lang-label-sub">O‘zbek</div></div>
+          </div>
+          <div class="lang-opt js-lang-opt" data-lang="en" role="radio" aria-checked="false">
+            <div class="lang-radio"></div>
+            <div class="lang-label"><div class="lang-label-title">English</div><div class="lang-label-sub">English</div></div>
+          </div>
+          <div class="lang-opt js-lang-opt" data-lang="ru" role="radio" aria-checked="false">
+            <div class="lang-radio"></div>
+            <div class="lang-label"><div class="lang-label-title">Russian</div><div class="lang-label-sub">Русский</div></div>
+          </div>
+        </div>
+        <div class="lang-foot">Keyinroq Sozlamalarda o‘zgartirishingiz mumkin.</div>
+      </div>
+    </div>
+    
+    </div>
+    
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+  <script src="https://unpkg.com/lottie-web/build/player/lottie.min.js"></script>
+  <script>(function(){
+    // Global: prevent selection and context menu to avoid long-press previews
+    try{
+      var ALLOW_SELECTION_SELECTOR = '[data-allow-selection="true"]';
+      var isSelectionAllowed = function(target){
+        return target && typeof target.closest === 'function' && target.closest(ALLOW_SELECTION_SELECTOR);
+      };
+      document.addEventListener('contextmenu', function(e){
+        if (isSelectionAllowed(e.target)) return;
+        e.preventDefault();
+      }, { capture:true });
+      document.addEventListener('selectstart', function(e){
+        if (isSelectionAllowed(e.target)) return;
+        e.preventDefault();
+      }, { capture:true });
+      document.body.style.userSelect='none';
+      document.body.style.webkitUserSelect='none';
+      document.body.style.MozUserSelect='none';
+    }catch(_){ }
+
+    var tg = window.Telegram && window.Telegram.WebApp; if (!tg) return;
+    try{ tg.ready && tg.ready(); }catch(_){ }
+
+    // Fast, idempotent bootstrap with watchdog + retry/backoff
+    var BOOT_FLAG = 'wa_boot_ok_v2';
+    var BOOT_TS = 'wa_boot_time';
+    var STALE_MS = 30*60*1000; // 30 min allows safe re-bootstrap if session was cleared
+    var inFlight = false;
+
+    function isBootFresh(){
+      try{
+        // If server says not authenticated, force bootstrap regardless of client flag
+        var serverAuth = ("true" === "true");
+        if (!serverAuth) {
+          return false;
+        }
+        if (!sessionStorage.getItem(BOOT_FLAG)) return false;
+        var t = parseInt(sessionStorage.getItem(BOOT_TS)||'0',10);
+        return (Date.now() - t) < STALE_MS;
+      }catch(_){ return false; }
+    }
+    function markBoot(){
+      try{ sessionStorage.setItem(BOOT_FLAG,'1'); sessionStorage.setItem(BOOT_TS, String(Date.now())); }catch(_){ }
+    }
+
+    function waitForInit(timeoutMs){
+      return new Promise(function(resolve){
+        var started = Date.now();
+        (function poll(){
+          try{
+            var v = (tg.initData||'').trim();
+            if (v) { resolve(v); return; }
+          }catch(_){ }
+          if (Date.now()-started >= timeoutMs){ resolve(''); return; }
+          setTimeout(poll, 80);
+        })();
+      });
+    }
+
+    function postBootstrap(init){
+      if (!init || inFlight) return Promise.resolve(false);
+      inFlight = true;
+      var ac = window.AbortController ? new AbortController() : null;
+      var t = setTimeout(function(){ try{ ac && ac.abort(); }catch(_){ } }, 3500);
+      var platform = (tg && tg.platform) ? tg.platform : '';
+      return fetch('/auth/bootstrap/', {
+        method:'POST', credentials:'same-origin', keepalive:true,
+        headers:{ 'Content-Type':'application/x-www-form-urlencoded' },
+        body:'init_data='+encodeURIComponent(init)+'&platform='+encodeURIComponent(platform),
+        signal: ac ? ac.signal : undefined
+      }).then(function(r){
+        var ok = r.ok;
+        try{
+          var wasAuthAtRender = ("true" === "true");
+          if (ok && !wasAuthAtRender){
+            var reloaded = sessionStorage.getItem('wa_boot_reload_done') === '1';
+            if (!reloaded){ sessionStorage.setItem('wa_boot_reload_done','1'); location.reload(); }
+          }
+        }catch(_){ }
+        return ok;
+      }).catch(function(){ return false; })
+        .finally(function(){ clearTimeout(t); inFlight=false; if (tg && tg.ready) try{ tg.ready(); }catch(_){ } });
+    }
+
+    function tryBootstrap(init){
+      if (!init || isBootFresh()) return;
+      var schedule = [0, 220, 600, 1200];
+      var done = false;
+      schedule.forEach(function(delay){
+        setTimeout(function(){ if (done) return; postBootstrap(init).then(function(ok){ if (ok){ done=true; markBoot(); } }); }, delay);
+      });
+      // final safety on page hide
+      var sendOnce = function(){
+        if (done || !init) return;
+        try{
+          var platform = (tg && tg.platform) ? tg.platform : '';
+          var payload = 'init_data='+encodeURIComponent(init)+'&platform='+encodeURIComponent(platform);
+          navigator.sendBeacon && navigator.sendBeacon('/auth/bootstrap/', new Blob([payload], { type:'application/x-www-form-urlencoded' }));
+        }catch(_){ }
+      };
+      window.addEventListener('pagehide', sendOnce, { once:true });
+      window.addEventListener('beforeunload', sendOnce, { once:true });
+    }
+
+    // Expose reusable ensureAuth + authFetch
+    window.ensureAuth = function(force){
+      return waitForInit(2500).then(function(init){
+        if (!init) return false;
+        if (!force && isBootFresh()) return true;
+        return postBootstrap(init).then(function(ok){ if (ok) markBoot(); return ok; });
+      });
+    };
+    window.authFetch = async function(url, opts){
+      var o = opts || {}; o.credentials = 'same-origin';
+      var r = await fetch(url, o);
+      if (r && r.status === 401){ try{ await window.ensureAuth(true); }catch(_){}
+        r = await fetch(url, o);
+      }
+      return r;
+    };
+
+    waitForInit(3500).then(function(init){
+      if (!init) return;
+      tryBootstrap(init);
+      
+      // Request write access (PM permission) - Telegram will show its own modal
+      // This should be called after tg.ready() and when Mini App is fully loaded
+      setTimeout(function() {
+        try {
+          if (!tg || !tg.requestWriteAccess) return;
+          
+        var u = tg.initDataUnsafe && tg.initDataUnsafe.user || {};
+        var serverCan = ("true" === "true");
+        var can = !!u.allows_write_to_pm || serverCan;
+        var ASK_FLAG = 'wa_write_access_asked_v1';
+          
+          // Only ask if permission is not granted and we haven't asked in this session
+          if (!can && !sessionStorage.getItem(ASK_FLAG)) {
+            // Telegram will show its own modal automatically
+            tg.requestWriteAccess(function(allowed) {
+              try {
+                // Mark as asked in this session (whether granted or denied)
+                // This prevents asking again during the same session
+                sessionStorage.setItem(ASK_FLAG, '1');
+                if (allowed) {
+                  // Send welcome message to user (only once per session)
+                  var welcomeSent = sessionStorage.getItem('wa_welcome_sent_v1');
+                  if (!welcomeSent) {
+                    // Ensure authentication before sending
+                    (window.ensureAuth ? window.ensureAuth(true) : Promise.resolve(true))
+                      .then(function() {
+                        // Small delay to ensure session is established
+                        return new Promise(function(resolve) {
+                          setTimeout(resolve, 300);
+                        });
+                      })
+                      .then(function() {
+                        // Call API to send welcome message
+                        // SECURITY: Don't send telegram_id - server uses session to identify user
+                        // This prevents users from sending messages to other users
+                        return (window.authFetch || fetch)('/api/user/send-welcome', {
+                          method: 'POST',
+                          headers: {'Content-Type': 'application/json'},
+                          credentials: 'same-origin'
+                          // No body - server uses session to identify user securely
+                        });
+                      })
+                      .then(function(response) {
+                        if (response.ok) {
+                          // Mark as sent to prevent duplicate requests
+                          sessionStorage.setItem('wa_welcome_sent_v1', '1');
+                          return response.json();
+                        }
+                        // Silently fail - not critical for user experience
+                        return null;
+                      })
+                      .catch(function() {
+                        // Silently fail - not critical for user experience
+                      });
+                  }
+                }
+              } catch(e) {
+                console.error('Error handling write access:', e);
+              }
+          });
+        }
+        } catch(e) {
+          console.error('Error requesting write access:', e);
+        }
+      }, 1000); // Wait 1 second after page load to ensure Telegram WebApp is ready
+    });
+  })();</script>
+  <script>(function(){
+    // First-time language picker
+    const modal=document.getElementById('langModal'); if(!modal) return;
+    const overlay=document.getElementById('langOverlay');
+    const closeBtn=document.getElementById('langModalClose');
+    const opts=[...modal.querySelectorAll('.js-lang-opt')];
+    let chosen='';
+    function setActive(code){ chosen=code; opts.forEach(o=>{ o.classList.toggle('active', o.getAttribute('data-lang')===code); }); }
+    // Prefill by Telegram user.language_code when possible
+    try{
+      var tg=window.Telegram&&window.Telegram.WebApp; var lc=(tg&&tg.initDataUnsafe&&tg.initDataUnsafe.user&&tg.initDataUnsafe.user.language_code||'').slice(0,2).toLowerCase();
+      setActive({ru:'ru',uk:'ru',uz:'uz',en:'en'}[lc]||'en');
+    }catch(_){ setActive('en'); }
+    opts.forEach(o=> o.addEventListener('click', ()=> setActive(o.getAttribute('data-lang'))));
+    function doSet(lang){
+      try{ localStorage.setItem(KEY,'1'); }catch(_){ }
+      if (window.__setLang) { window.__setLang(lang); return; }
+      try{ fetch('/i18n/set/?lang='+encodeURIComponent(lang), { method:'POST', headers:{ 'X-CSRFToken': (document.cookie.match(/csrftoken=([^;]+)/)||[])[1]||'' } }).then(function(){ location.reload(); }); }catch(_){ location.reload(); }
+    }
+    function hideModal(){ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); document.body.classList.remove('lang-modal-open'); try{ tg.MainButton.hide(); tg.MainButton.offClick && tg.MainButton.offClick(); }catch(_){ } 
+      // Notify channel modal that language modal is closed
+      try{
+        var evt = new Event('tezstar:lang-modal-closed');
+        document.dispatchEvent(evt);
+      }catch(e){
+        try{
+          var legacyEvt = document.createEvent && document.createEvent('Event');
+          if (legacyEvt){
+            legacyEvt.initEvent('tezstar:lang-modal-closed', true, true);
+            document.dispatchEvent(legacyEvt);
+          }
+        }catch(_){}
+      }
+    }
+    function showModal(hideFoot){
+      var foot = modal.querySelector('.lang-foot'); if (foot) { foot.style.display = hideFoot ? 'none' : ''; }
+      modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); document.body.classList.add('lang-modal-open');
+      try{
+        var tg=window.Telegram&&window.Telegram.WebApp; if(tg){ tg.ready && tg.ready(); tg.MainButton.setText('Tasdiqlash'); tg.MainButton.setParams({ has_shine_effect: true }); tg.MainButton.show(); tg.MainButton.onClick(function(){ if(chosen){ doSet(chosen); } }); }
+      }catch(_){ }
+    }
+    closeBtn.addEventListener('click', hideModal);
+    overlay.addEventListener('click', hideModal);
+    // Show only if not selected before and no language cookie present
+    function getCookie(name){ const m=(document.cookie||'').match(new RegExp('(?:^|; )'+name+'=([^;]*)')); return m?decodeURIComponent(m[1]):''; }
+    const cookieLang=getCookie('django_language');
+    try{ if (cookieLang){ setActive(cookieLang); } }catch(_){ }
+    function deferLanguageModal(){
+      var opened=false;
+      function openNow(){
+        if (opened) return;
+        opened=true;
+        setTimeout(function(){ showModal(false); }, 120);
+      }
+      function waitForLoading(){
+        if (document.body.classList.contains('content-loaded')){
+          openNow();
+          return;
+        }
+        var handler=function(){
+          document.removeEventListener('tezstar:loading-finished', handler);
+          openNow();
+        };
+        document.addEventListener('tezstar:loading-finished', handler);
+        setTimeout(function(){
+          document.removeEventListener('tezstar:loading-finished', handler);
+          openNow();
+        }, 2800); // fallback in case loading event never fires
+      }
+      setTimeout(waitForLoading, 450); // allow loading animation to settle
+    }
+    // Server-side source of truth: show only if authenticated user hasn't confirmed
+    var SHOULD_OPEN = ("false" === "true");
+    
+    // Welcome sticker (fast preload + lazy inflate)
+    // Use welcome_sticker.tgs for first-time selection, chose-language.tgs for subsequent opens
+    var langStickerAnim = null;
+    function loadLangSticker(isFirstTime){
+      var el=document.getElementById('lang-duck'); if(!el) return;
+      function inflateTgs(buf){ try{ var u8=new Uint8Array(buf); var json=new TextDecoder().decode(pako.inflate(u8)); return JSON.parse(json);}catch(_){ return null; } }
+      var url = isFirstTime ? "/static/stickers/welcome_sticker.tgs" : "/static/stickers/chose-language.tgs";
+      function load(){ 
+        if(!window.lottie || !window.pako) { 
+          setTimeout(load, 80); 
+          return; 
+        } 
+        fetch(url, { cache:'force-cache' }).then(function(r){return r.arrayBuffer();}).then(function(b){ 
+          var data=inflateTgs(b); 
+          if(!data) return; 
+          // Destroy previous animation if exists
+          if(langStickerAnim){ 
+            try{ langStickerAnim.destroy(); }catch(_){ } 
+            langStickerAnim = null; 
+          }
+          langStickerAnim = lottie.loadAnimation({ container: el, renderer:'svg', loop:true, autoplay:true, animationData:data }); 
+        }).catch(function(){ }); 
+      }
+      // small delay to allow preload to finish
+      setTimeout(load, 120);
+    }
+    
+    // Load sticker on page load
+    loadLangSticker(SHOULD_OPEN);
+    
+    if(SHOULD_OPEN){ deferLanguageModal(); }
+    
+    // Expose open/close for other pages (e.g., profile)
+    // When modal is opened manually (not first-time), use chose-language sticker
+    window.openLangModal = function(){ 
+      // If opened manually, it's not first-time, so use chose-language sticker
+      loadLangSticker(false);
+      try{ showModal(true); }catch(_){ } 
+    };
+    window.closeLangModal = function(){ try{ hideModal(); }catch(_){ } };
+  })();</script>
+  <script>(function(){
+    var tg = window.Telegram && window.Telegram.WebApp; if (!tg) return;
+    try{ tg.ready && tg.ready(); }catch(e){}
+    var init = (tg.initData||'').trim();
+    if (!init) return; // middleware handles unsupported envs
+    const IS_ROOT = ("false" === "true");
+
+    const getStack = () => { try{ const s=sessionStorage.getItem('navigationStack'); return s?JSON.parse(s):[]; }catch(_){ return []; } };
+    const setStack = (st) => { try{ sessionStorage.setItem('navigationStack', JSON.stringify(st)); }catch(_){ } };
+    const updateStack = (url) => { const st=getStack(); if (st[st.length-1]!==url){ st.push(url); setStack(st);} };
+
+    const goBack = () => {
+      try{ tg.HapticFeedback && tg.HapticFeedback.impactOccurred && tg.HapticFeedback.impactOccurred('light'); }catch(_){ }
+      const st=getStack(); st.pop(); const prev = st.length ? st[st.length-1] : "/webapp/"; setStack(st); window.location.href = prev;
+    };
+
+  // Sozlamalar tugmasi
+  if (tg && tg.SettingsButton) {
+    tg.SettingsButton.show();
+    tg.SettingsButton.onClick(() => {
+      const profileUrl = "/webapp/profile/";
+      updateStack(profileUrl); // Profil sahifasini stackga qo'shamiz
+      window.location.href = profileUrl;
+    });
+  }
+
+    const current = window.location.pathname + window.location.search;
+    updateStack(current);
+
+    tg.offEvent && tg.offEvent('backButtonClicked', goBack);
+    tg.onEvent && tg.onEvent('backButtonClicked', goBack);
+    if (IS_ROOT){ try{ tg.BackButton.hide(); }catch(_){ } } else { try{ tg.BackButton.show(); }catch(_){ } }
+
+    const cleanup = () => { tg.offEvent && tg.offEvent('backButtonClicked', goBack); try{ tg.BackButton.hide(); }catch(_){ } };
+    window.addEventListener('pagehide', cleanup, { once:true });
+    window.addEventListener('beforeunload', cleanup, { once:true });
+  })();</script>
+  <script>(function(){
+    function closeAll(){
+      document.querySelectorAll('.tm-dropdown').forEach(function(dd){ dd.classList.remove('open'); });
+      document.querySelectorAll('.tm-dropdown .dropdown-menu').forEach(function(m){ m.style.display=''; });
+      document.querySelectorAll('.tm-dropdown [data-toggle="dropdown"]').forEach(function(b){ b.setAttribute('aria-expanded','false'); });
+    }
+    function initDropdowns(){
+      var dds = Array.prototype.slice.call(document.querySelectorAll('.tm-dropdown'));
+      dds.forEach(function(dd){
+        var btn = dd.querySelector('[data-toggle="dropdown"]');
+        var menu = dd.querySelector('.dropdown-menu');
+        if (!btn || !menu) return;
+        btn.addEventListener('click', function(e){
+          e.preventDefault(); e.stopPropagation();
+          var isOpen = dd.classList.contains('open');
+          closeAll();
+          if (!isOpen){
+            dd.classList.add('open');
+            btn.setAttribute('aria-expanded','true');
+            menu.style.display = 'block';
+          }
+        });
+      });
+      document.addEventListener('click', closeAll);
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeAll(); });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initDropdowns); else initDropdowns();
+  })();</script>
+  <script>(function(){
+    // Safe anchor navigation: hide href and navigate via data-safe-href
+    function go(url, openBlank){
+      try{
+        var isHttp = /^https?:/i.test(url);
+        var tg = window.Telegram && window.Telegram.WebApp;
+        
+        // Check if platform is desktop
+        var platform = (tg && tg.platform) ? tg.platform.toLowerCase() : '';
+        var isDesktop = platform === 'macos' || platform === 'windows' || platform === 'linux' || platform === 'web' || platform === 'tdesktop' || platform === 'weba';
+        
+        // For desktop platforms or if openBlank is explicitly requested, use window.open
+        if ((isDesktop || openBlank) && isHttp){ 
+          window.open(url, '_blank', 'noopener,noreferrer'); 
+          return; 
+        }
+        
+        // For mobile platforms, use Telegram WebApp API
+        if (isHttp && tg){
+          var u = new URL(url, window.location.href);
+          var host = (u.host||'').toLowerCase();
+          if (host.endsWith('t.me') || host.endsWith('telegram.me')){ tg.openTelegramLink && tg.openTelegramLink(url); return; }
+          if (tg.openLink){ tg.openLink(url); return; }
+        }
+        if (isHttp){ window.open(url, '_blank', 'noopener,noreferrer'); return; }
+      }catch(_){ }
+      window.location.href = url;
+    }
+    function handleClick(e){
+      var a = e.target.closest('a[data-safe-href]');
+      if (!a) return;
+      e.preventDefault(); e.stopPropagation();
+      var url = a.getAttribute('data-safe-href'); if (!url) return;
+      var ob = (a.getAttribute('data-open-blank')||'').toLowerCase();
+      var openBlank = (ob==='1'||ob==='true'||ob==='yes');
+      go(url, openBlank);
+    }
+    document.addEventListener('click', handleClick, true);
+    // Also wire .js-safe-nav buttons for other pages
+    document.addEventListener('click', function(e){
+      var b = e.target.closest('.js-safe-nav');
+      if (!b) return;
+      e.preventDefault(); e.stopPropagation();
+      var url = b.getAttribute('data-url'); if (!url) return;
+      var ob = (b.getAttribute('data-open-blank')||'').toLowerCase();
+      var openBlank = (ob==='1'||ob==='true'||ob==='yes');
+      go(url, openBlank);
+    }, true);
+    // Language setter helper (used by pages)
+    window.__setLang = function(lang){
+      try{
+        fetch('/i18n/set/?lang='+encodeURIComponent(lang), { method:'POST' })
+          .then(function(){ location.reload(); })
+          .catch(function(){ location.reload(); });
+      }catch(_){ location.reload(); }
+    };
+    
+  })();</script>
+  <script>
+  // CSRF Token helper function for all pages
+  window.getCSRFToken = function() {
+    // Try to get from hidden input field (if exists in form)
+    let token = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
+    if (token) return token;
+    
+    // Try to get from cookie
+    const match = document.cookie.match(/csrftoken=([^;]+)/);
+    if (match && match[1]) return match[1];
+    
+    // Fallback: try to extract from Django's CSRF token meta tag
+    const metaToken = document.querySelector('meta[name=csrf-token]');
+    if (metaToken) return metaToken.getAttribute('content');
+    
+    return '';
+  };
+  </script>
+  <script>
+  (function(){
+    var shouldShow = ("false" === "true");
+    var modal = document.getElementById('channelGateModal');
+    if (!shouldShow || !modal) { return; }
+    var joinUrl = modal.getAttribute('data-join-url') || '';
+    if (!joinUrl) { return; }
+    var actionBtn = modal.querySelector('.channel-cta');
+    var closeBtn = modal.querySelector('.channel-close');
+    var overlay = document.getElementById('channelOverlay');
+    var badgeImg = document.getElementById('channelBadgeImg');
+    var opened = false;
+    var langModalShouldOpen = ("false" === "true");
+    var langHandlerAttached = false;
+    var membershipCheckInterval = null;
+
+    // Update badge image based on Telegram theme
+    function updateBadgeImage(){
+      if (!badgeImg) return;
+      try{
+        var tg = window.Telegram && window.Telegram.WebApp;
+        var colorScheme = (tg && tg.colorScheme) ? tg.colorScheme : 'light';
+        var badgeSrc = colorScheme === 'dark' 
+          ? "/static/images/major-badge.jpeg"
+          : "/static/images/major-badge.svg";
+        badgeImg.src = badgeSrc;
+      }catch(_){}
+    }
+    updateBadgeImage();
+    // Listen for theme changes
+    if (window.Telegram && window.Telegram.WebApp){
+      try{
+        window.Telegram.WebApp.onEvent('themeChanged', updateBadgeImage);
+      }catch(_){}
+    }
+
+    function isLangModalOpen(){
+      var langModal = document.getElementById('langModal');
+      return langModal && langModal.classList.contains('open');
+    }
+
+    function checkChannelMembership(){
+      var tg = window.Telegram && window.Telegram.WebApp;
+      var tgid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || '';
+      var url = tgid ? '/api/user/channel-membership?telegram_id='+tgid : '/api/user/channel-membership';
+      fetch(url).then(function(r){ return r.json(); }).then(function(data){
+        if (data && data.ok && data.is_member === true){
+          if (membershipCheckInterval){
+            clearInterval(membershipCheckInterval);
+            membershipCheckInterval = null;
+          }
+          closeModal();
+        }
+      }).catch(function(){});
+    }
+
+    function openModal(){
+      if (opened) return;
+      // Til modal'i ochilgan bo'lsa, kanal modal'ini ochmaymiz
+      if (isLangModalOpen()) {
+        // Til modal'i yopilguncha kutish
+        if (!langHandlerAttached) {
+          langHandlerAttached = true;
+          var checkLangClosed = setInterval(function(){
+            if (!isLangModalOpen()) {
+              clearInterval(checkLangClosed);
+              langHandlerAttached = false;
+              // Til modal'i yopilgandan keyin ochish
+              setTimeout(function(){
+                if (!opened && !isLangModalOpen()) {
+                  opened = true;
+                  modal.classList.add('open');
+                  modal.setAttribute('aria-hidden','false');
+                  document.body.classList.add('channel-modal-open');
+                }
+              }, 500);
+            }
+            if (opened) {
+              clearInterval(checkLangClosed);
+              langHandlerAttached = false;
+            }
+          }, 300);
+        }
+        return;
+      }
+      opened = true;
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+      document.body.classList.add('channel-modal-open');
+      
+      // Don't start checking immediately - wait for user action
+    }
+    function closeModal(){
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+      document.body.classList.remove('channel-modal-open');
+      
+      // Stop checking membership
+      if (membershipCheckInterval){
+        clearInterval(membershipCheckInterval);
+        membershipCheckInterval = null;
+      }
+    }
+    function showWhenReady(){
+      if (opened) return;
+      
+      // Check if language modal is currently open or should open
+      if (isLangModalOpen() || langModalShouldOpen){
+        // Wait for language modal to close - yanada qat'iy tekshiruv
+        if (!langHandlerAttached){
+          langHandlerAttached = true;
+          var langHandler = function(){
+            document.removeEventListener('tezstar:lang-modal-closed', langHandler);
+            langHandlerAttached = false;
+            // Til modal'i to'liq yopilganligini tekshirish
+            setTimeout(function(){
+              // Til modal'i haqiqatan ham yopilganligini tekshirish
+              var langModalEl = document.getElementById('langModal');
+              var isLangReallyClosed = !langModalEl || !langModalEl.classList.contains('open');
+              if (isLangReallyClosed && !opened) {
+                // Qo'shimcha kutish - animatsiya tugashi uchun
+                setTimeout(function(){
+                  if (!opened && !isLangModalOpen()) {
+                    openModal();
+                  }
+                }, 500);
+              }
+            }, 200);
+          };
+          document.addEventListener('tezstar:lang-modal-closed', langHandler);
+          
+          // Til modal'i ochilganini kuzatish - polling orqali
+          var checkLangClosed = setInterval(function(){
+            if (opened) {
+              clearInterval(checkLangClosed);
+              return;
+            }
+            // Agar til modal'i yopilgan bo'lsa
+            if (!isLangModalOpen() && !langModalShouldOpen) {
+              clearInterval(checkLangClosed);
+              document.removeEventListener('tezstar:lang-modal-closed', langHandler);
+              langHandlerAttached = false;
+              setTimeout(function(){
+                if (!opened && !isLangModalOpen()) {
+                  openModal();
+                }
+              }, 500);
+            }
+          }, 300);
+          
+          // Fallback: if language modal never closes, show channel modal after 10 seconds
+          setTimeout(function(){
+            clearInterval(checkLangClosed);
+            document.removeEventListener('tezstar:lang-modal-closed', langHandler);
+            langHandlerAttached = false;
+            if (!opened && !isLangModalOpen()) {
+              setTimeout(openModal, 500);
+            }
+          }, 10000);
+        }
+        return;
+      }
+      // If no language modal, show channel modal normally
+      setTimeout(openModal, 180);
+    }
+
+    // Check periodically if language modal is closed (in case event doesn't fire)
+    var checkInterval = setInterval(function(){
+      if (opened || !shouldShow) {
+        clearInterval(checkInterval);
+        return;
+      }
+      // Til modal'i yopilganligini aniq tekshirish
+      if (langModalShouldOpen && !isLangModalOpen() && !opened) {
+        clearInterval(checkInterval);
+        // Qo'shimcha kutish - animatsiya tugashi uchun
+        setTimeout(function(){
+          if (!opened && !isLangModalOpen()) {
+            openModal();
+          }
+        }, 600);
+      }
+    }, 500);
+
+    if (document.body.classList.contains('content-loaded')){
+      showWhenReady();
+    } else {
+      var handler = function(){
+        document.removeEventListener('tezstar:loading-finished', handler);
+        showWhenReady();
+      };
+      document.addEventListener('tezstar:loading-finished', handler);
+      // In case loading event never fires
+      setTimeout(showWhenReady, 3200);
+    }
+
+    if (closeBtn){
+      closeBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      }, true);
+    }
+    if (overlay){
+      overlay.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        closeModal();
+      });
+    }
+
+    if (actionBtn){
+      actionBtn.addEventListener('click', function(){
+        try{
+          var tg = window.Telegram && window.Telegram.WebApp;
+          if (tg && tg.HapticFeedback && tg.HapticFeedback.impactOccurred){
+            tg.HapticFeedback.impactOccurred('light');
+          }
+          
+          // Start checking membership after user clicks join button
+          if (membershipCheckInterval) clearInterval(membershipCheckInterval);
+          checkChannelMembership();
+          membershipCheckInterval = setInterval(checkChannelMembership, 2000);
+          
+          // Check if platform is desktop
+          var platform = (tg && tg.platform) ? tg.platform.toLowerCase() : '';
+          var isDesktop = platform === 'macos' || platform === 'windows' || platform === 'linux' || platform === 'web' || platform === 'tdesktop' || platform === 'weba';
+          
+          // For desktop platforms, use window.open with target="_blank"
+          if (isDesktop) {
+            window.open(joinUrl, '_blank', 'noopener,noreferrer');
+            return;
+          }
+          
+          // For mobile platforms, use Telegram WebApp API
+          if (tg && tg.openTelegramLink){
+            tg.openTelegramLink(joinUrl);
+            return;
+          }
+          if (tg && tg.openLink){
+            tg.openLink(joinUrl);
+            return;
+          }
+        }catch(_){}
+        // Fallback
+        window.open(joinUrl, '_blank', 'noopener,noreferrer');
+      });
+    }
+    
+    // Check when user returns from channel
+    document.addEventListener('visibilitychange', function(){
+      if (document.visibilityState === 'visible' && opened && !membershipCheckInterval){
+        checkChannelMembership();
+      }
+    });
+    
+    if (actionBtn){
+      var tg = window.Telegram && window.Telegram.WebApp;
+      if (tg && tg.onEvent){
+        tg.onEvent('viewportChanged', function(){
+          if (opened && !membershipCheckInterval) setTimeout(checkChannelMembership, 500);
+        });
+      }
+    }
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape'){
+        closeModal();
+      }
+    });
+  })();
+  </script>
+  <script>
+  // Loading modal with sticker animation - optimized with cache check
+  (function() {
+    var loadingEl = document.getElementById('page-loading');
+    var stickerEl = document.getElementById('page-loading-sticker');
+    var stickerUrl = "/static/stickers/loading-animation.tgs";
+    var stickerAnimation = null;
+    var bufCache = null;
+    var contentReady = false;
+    var stickerReady = false;
+    var minLoadingTime = 1500; // Minimum 1.5 seconds to show animation
+    var startTime = Date.now();
+    var LOADING_FLAG = 'page_loading_shown_v1';
+    var loadingSignalSent = false;
+    
+    function announceLoadingFinished(){
+      if (loadingSignalSent) return;
+      loadingSignalSent = true;
+      document.body.classList.add('content-loaded');
+      try{
+        var evt = new Event('tezstar:loading-finished');
+        document.dispatchEvent(evt);
+      }catch(e){
+        try{
+          var legacyEvt = document.createEvent && document.createEvent('Event');
+          if (legacyEvt){
+            legacyEvt.initEvent('tezstar:loading-finished', true, true);
+            document.dispatchEvent(legacyEvt);
+          }
+        }catch(_){}
+      }
+    }
+    
+    // Check if content is from cache
+    function isFromCache() {
+      try {
+        // Modern API
+        if (performance.getEntriesByType) {
+          var navEntries = performance.getEntriesByType('navigation');
+          if (navEntries.length > 0) {
+            var navType = navEntries[0].type;
+            // 'back_forward' = back/forward cache, 'prerender' = prerendered
+            return navType === 'back_forward' || navType === 'prerender';
+          }
+        }
+        // Fallback for older browsers
+        if (performance.navigation) {
+          var navType = performance.navigation.type;
+          // 2 = TYPE_BACK_FORWARD (from cache)
+          return navType === 2;
+        }
+      } catch(e) {}
+      return false;
+    }
+    
+    // Check if loading was already shown in this session
+    function wasLoadingShown() {
+      try {
+        return sessionStorage.getItem(LOADING_FLAG) === '1';
+      } catch(e) {
+        return false;
+      }
+    }
+    
+    // Mark loading as shown in this session
+    function markLoadingShown() {
+      try {
+        sessionStorage.setItem(LOADING_FLAG, '1');
+      } catch(e) {}
+    }
+    
+    // Check if we should show loading
+    var fromCache = isFromCache();
+    var alreadyShown = wasLoadingShown();
+    var shouldShowLoading = !fromCache && !alreadyShown;
+    
+    // If content is from cache and loading was already shown, hide immediately
+    if (fromCache && alreadyShown) {
+      if (loadingEl) {
+        loadingEl.style.display = 'none';
+      }
+      announceLoadingFinished();
+      return; // Exit early - no loading needed
+    }
+    
+    // If we shouldn't show loading, hide it immediately
+    if (!shouldShowLoading) {
+      if (loadingEl) {
+        loadingEl.style.display = 'none';
+      }
+      announceLoadingFinished();
+      return; // Exit early
+    }
+    
+    // Mark that we're showing loading
+    markLoadingShown();
+    
+    // Preload sticker immediately (highest priority - starts before anything else)
+    function preloadSticker() {
+      try {
+        fetch(stickerUrl, { cache: 'force-cache' })
+          .then(function(r) { return r.arrayBuffer(); })
+          .then(function(b) { 
+            bufCache = b;
+            // Try to load immediately if libraries are ready
+            tryLoadSticker();
+          });
+      } catch(e) {}
+    }
+    // Start preloading immediately (before any delays)
+    preloadSticker();
+    
+    // Load and display sticker (optimized - checks libraries and buffer)
+    function tryLoadSticker() {
+      // Prevent duplicate loading
+      if (stickerReady || stickerAnimation || !stickerEl) return;
+      
+      // Check if libraries are ready
+      if (!window.lottie || !window.pako) {
+        setTimeout(tryLoadSticker, 30); // Faster check interval
+        return;
+      }
+      
+      // If buffer is ready, load immediately
+      if (bufCache) {
+        loadStickerFromBuffer(bufCache);
+      } else {
+        // Wait a bit for preload to finish, then fetch if needed
+        setTimeout(function() {
+          if (stickerReady || stickerAnimation) return; // Check again before loading
+          if (bufCache) {
+            loadStickerFromBuffer(bufCache);
+          } else {
+            fetch(stickerUrl, { cache: 'force-cache' })
+              .then(function(r) { return r.arrayBuffer(); })
+              .then(function(b) { 
+                if (!stickerReady && !stickerAnimation) {
+                  loadStickerFromBuffer(b); 
+                }
+              })
+              .catch(function() {});
+          }
+        }, 50);
+      }
+    }
+    
+    // Load sticker from buffer (optimized - prevents duplicate loading)
+    function loadStickerFromBuffer(buffer) {
+      // Prevent duplicate loading
+      if (stickerReady || stickerAnimation || !stickerEl || !window.lottie || !window.pako) return;
+      
+      function inflateTgs(buf) {
+        try {
+          var u8 = new Uint8Array(buf);
+          var json = new TextDecoder().decode(pako.inflate(u8));
+          return JSON.parse(json);
+        } catch(e) {
+          return null;
+        }
+      }
+      
+      var data = inflateTgs(buffer);
+      if (!data) return;
+      
+      try {
+        stickerAnimation = lottie.loadAnimation({
+          container: stickerEl,
+          renderer: 'svg',
+          loop: true,
+          autoplay: true,
+          animationData: data
+        });
+        stickerReady = true;
+        checkReadyToHide();
+      } catch(e) {}
+    }
+    
+    // Start trying to load sticker immediately (parallel with preload)
+    tryLoadSticker();
+    
+    // Check if content is fully loaded
+    function checkContentLoaded() {
+      // Check CSS
+      var testEl = document.createElement('div');
+      testEl.className = 'btn-primary';
+      testEl.style.display = 'none';
+      document.body.appendChild(testEl);
+      var styles = window.getComputedStyle(testEl);
+      var cssLoaded = styles.display !== '' && (styles.color !== '' || styles.backgroundColor !== '');
+      document.body.removeChild(testEl);
+      
+      // Check if DOM is ready
+      var domReady = document.readyState === 'complete' || document.readyState === 'interactive';
+      
+      // Check if images are loaded
+      var images = document.querySelectorAll('img');
+      var imagesLoaded = true;
+      if (images.length > 0) {
+        for (var i = 0; i < images.length; i++) {
+          if (!images[i].complete) {
+            imagesLoaded = false;
+            break;
+          }
+        }
+      }
+      
+      return cssLoaded && domReady && imagesLoaded;
+    }
+    
+    // Check if ready to hide loading (both content and minimum time)
+    function checkReadyToHide() {
+      if (!contentReady || !stickerReady) return;
+      
+      var elapsed = Date.now() - startTime;
+      var remaining = Math.max(0, minLoadingTime - elapsed);
+      
+      // Wait for minimum time to pass
+      setTimeout(function() {
+        hideLoading();
+      }, remaining);
+    }
+    
+    // Hide loading and show content
+    function hideLoading() {
+      if (!loadingEl || loadingEl.classList.contains('hidden')) return;
+      
+      // Add content-loaded class to body + notify listeners
+      announceLoadingFinished();
+      
+      // Hide loading modal with fade out
+      setTimeout(function() {
+        if (loadingEl) {
+          loadingEl.classList.add('hidden');
+          // Remove from DOM after animation
+          setTimeout(function() {
+            if (loadingEl && loadingEl.parentNode) {
+              loadingEl.parentNode.removeChild(loadingEl);
+            }
+            if (stickerAnimation) {
+              try {
+                stickerAnimation.destroy();
+              } catch(e) {}
+            }
+          }, 300);
+        }
+      }, 100);
+    }
+    
+    // Sticker loading is already started in preloadSticker() and tryLoadSticker()
+    
+    // Check content loading status
+    function checkContentStatus() {
+      if (checkContentLoaded()) {
+        contentReady = true;
+        checkReadyToHide();
+      } else {
+        setTimeout(checkContentStatus, 100);
+      }
+    }
+    
+    // Start checking after DOM is ready
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      checkContentStatus();
+    } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        checkContentStatus();
+      });
+    }
+    
+    // Also check when window is fully loaded
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        contentReady = true;
+        checkReadyToHide();
+      }, 100);
+    });
+    
+    // Fallback: hide loading after max 4 seconds (even if not fully loaded)
+    setTimeout(function() {
+      if (loadingEl && !loadingEl.classList.contains('hidden')) {
+        contentReady = true;
+        stickerReady = true;
+        hideLoading();
+      }
+    }, 4000);
+  })();
+  </script>
+  
+<script src="https://unpkg.com/pako@2.1.0/dist/pako.min.js"></script>
+<script src="https://unpkg.com/lottie-web/build/player/lottie.min.js"></script>
+<script>
+(function(){
+  
+  const I18N = {
+    buyTelegramStars: "Telegram Stars sotib olish",
+    popupYouWillReceive: "Quyidagi kabi xabar olasiz",
+    searchFailed: "Qidiruv muvaffaqiyatsiz. Iltimos, yana urinib ko‘ring.",
+    upToLimit: "Maksimal 10 000 yulduz sotib olishingiz mumkin.",
+    errUserNotFound: "Foydalanuvchi topilmadi.",
+    errInvalidUsername: "Foydalanuvchi nomi formati noto‘g‘ri.",
+    errUserNotAvailable: "Foydalanuvchi mavjud emas.",
+    errRateLimit: "Juda ko‘p so‘rov. Iltimos, kuting.",
+    errNetwork: "Tarmoq xatosi. Yana urinib ko'ring.",
+    errServer: "Server xatosi. Yana urinib ko‘ring.",
+    errUsernameRequired: "Iltimos, Telegram username kiriting",
+    usernameRequiredMessage: "Iltimos, Telegram @username qo\u0027shing va ilovani qayta oching.",
+    testPaymentOkT: "Muvaffaqiyatli",
+    testPaymentOkD: "Sinov to‘lov so‘rovingiz yuborildi.",
+    cdDays: "kun",
+    cdMs: "ms",
+  };
+  const apiBase = "";
+  const floatingCountdown = document.getElementById('floatingCountdown');
+  const floatingCountdownClose = document.getElementById('floatingCountdownClose');
+  const countdownEl = document.getElementById('stars-countdown');
+  (function initCountdown(){
+    if (!countdownEl) return;
+    const deadline = parseInt(countdownEl.getAttribute('data-countdown-deadline'), 10);
+    const serverNow = parseInt(countdownEl.getAttribute('data-server-now'), 10);
+    if (!deadline || !serverNow) return;
+    const offset = serverNow - Date.now();
+    const textNode = countdownEl.querySelector('.tm-countdown-text');
+    if (!textNode) return;
+    const pad = (value, size=2) => String(Math.max(0, value)).padStart(size, '0');
+    const STEP = 80;
+    const DAY = 24 * 60 * 60 * 1000;
+    const HOUR = 60 * 60 * 1000;
+    const MIN = 60 * 1000;
+    let timer = null;
+    const update = () => {
+      const now = Date.now() + offset;
+      let diff = Math.max(0, deadline - now);
+      const days = Math.floor(diff / DAY);
+      diff -= days * DAY;
+      const hours = Math.floor(diff / HOUR);
+      diff -= hours * HOUR;
+      const mins = Math.floor(diff / MIN);
+      diff -= mins * MIN;
+      const secs = Math.floor(diff / 1000);
+      const ms = diff - secs * 1000;
+      const msPart = pad(ms, 3);
+      const timeCore = `${pad(hours)}:${pad(mins)}:${pad(secs)}`;
+      if (days > 0) {
+        textNode.textContent = `${days} ${I18N.cdDays} · ${timeCore}`;
+      } else {
+        textNode.textContent = `${timeCore}`;
+      }
+      if (deadline - now <= 0 && timer){
+        clearInterval(timer);
+        countdownEl.classList.add('is-expired');
+        if (floatingCountdown) floatingCountdown.classList.add('is-hidden');
+      }
+    };
+    update();
+    timer = setInterval(update, STEP);
+  })();
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const isValidPaymentMethod = (method) => method === 'payme' || method === 'click';
+  const readLocalPaymentDefault = () => {
+    try{
+      const cached = localStorage.getItem('ts_pay_default');
+      if (isValidPaymentMethod(cached)) return cached;
+    }catch(_){ /* ignore */ }
+    return null;
+  };
+  let storedDefaultMethod = readLocalPaymentDefault() || 'payme';
+  let defaultMethodPromise = null;
+  function ensureDefaultPaymentMethod(){
+    if (defaultMethodPromise) return defaultMethodPromise;
+    defaultMethodPromise = new Promise((resolve)=>{
+      const fallback = readLocalPaymentDefault();
+      const finalize = (value)=>{
+        if (isValidPaymentMethod(value)){
+          storedDefaultMethod = value;
+          try{ localStorage.setItem('ts_pay_default', value); }catch(_){ }
+        } else if (isValidPaymentMethod(fallback)){
+          storedDefaultMethod = fallback;
+        } else if (!isValidPaymentMethod(storedDefaultMethod)){
+          storedDefaultMethod = 'payme';
+        }
+        resolve(storedDefaultMethod);
+      };
+      if (!window.authFetch){
+        finalize(null);
+        return;
+      }
+      try{
+        var tg = window.Telegram && window.Telegram.WebApp;
+        var tgid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || '';
+        var url = tgid ? ('/api/user/payment-default?telegram_id='+tgid) : '/api/user/payment-default';
+        window.authFetch(url).then(r=>r.json()).then(function(d){
+          if (d && d.ok && isValidPaymentMethod(d.default)){ finalize(d.default); }
+          else finalize(null);
+        }).catch(function(){ finalize(null); });
+      }catch(_){
+        finalize(null);
+      }
+    });
+    return defaultMethodPromise;
+  }
+  ensureDefaultPaymentMethod();
+
+  // Elements
+  const searchField = $('.js-stars-search-field');
+  const searchInput = $('.tm-search-input');
+  const loading = searchField ? $('.tm-search-loading', searchField) : null;
+  const clearBtn = $('.js-form-clear');
+  const errorEl = $('.js-search-field-error');
+  const photo = $('.js-stars-search-photo');
+
+  const qtyInput = $('.tm-amount-input');
+  const qtyClearBtn = $('.js-quantity-clear');
+  const qtyErrorEl = $('.js-quantity-field-error');
+  const curPriceEl = $('.js-cur-price');
+  const buyBtn = $('.js-stars-buy-btn');
+  const buyBtnLabel = $('.js-stars-btn-label');
+  function hideFloatingCountdown(){
+    if (floatingCountdown){
+      floatingCountdown.classList.add('is-hidden');
+    }
+  }
+  if (floatingCountdownClose){
+    floatingCountdownClose.addEventListener('click', hideFloatingCountdown);
+  }
+  if (floatingCountdown && buyBtn){
+    buyBtn.addEventListener('click', hideFloatingCountdown);
+  }
+
+  // Popup elements
+  const popup = $('.js-buy-stars-popup');
+  const popupClose = popup ? popup.querySelector('.popup-cancel-btn') : null;
+  const popupForm = popup ? popup.querySelector('.js-buy-stars-form') : null;
+  const popupContent = popup ? popup.querySelector('.js-buy-stars-content') : null;
+  const popupBtnLabel = popup ? popup.querySelector('.js-buy-stars-button') : null;
+  const popupNameSpan = popup ? popup.querySelector('.js-recepient-first-name') : null;
+  let stickerAnimation = null;
+
+  const radioWrap = $('.tm-form-radio-items');
+  let radios = $$('input.radio[name="stars"]');
+  const moreRow = $('.tm-more-options');
+  const moreBtn = $('.js-more-options');
+  const myselfLink = document.querySelector('.js-myself-link');
+
+  const PINNED = [50, 100, 500];
+  let foundRecipient = null;
+  let foundName = null;
+  let foundPhoto = null; // Store original photo HTML from Fragment API
+  let foundNameRaw = null; // Store original name (HTML encoded) from Fragment API
+  let originalQuery = null; // Store original username for "myself" comparison
+  let originalUsername = null; // Store original username input for recipient_username
+  let isUpdatingInput = false; // Flag to prevent search when updating input value
+  let isSearching = false; // Flag to prevent concurrent searches
+
+  // Preload stickers in background (based on stars quantity)
+  const preloadedStickers = {};
+  (function preloadStickers(){
+    const files = {
+      small: "/static/stickers/3month_premium.tgs",
+      medium: "/static/stickers/6month_premium.tgs",
+      large: "/static/stickers/12month_premium.tgs"
+    };
+    const loadOne = async (key) => {
+      try{
+        const res = await fetch(files[key], { cache: 'force-cache' });
+        const buf = await res.arrayBuffer();
+        const jsonStr = new TextDecoder().decode(pako.inflate(new Uint8Array(buf)));
+        preloadedStickers[key] = JSON.parse(jsonStr);
+      }catch(_){ /* silently ignore */ }
+    };
+    const run = () => { loadOne('small'); loadOne('medium'); loadOne('large'); };
+    if ('requestIdleCallback' in window) requestIdleCallback(run); else setTimeout(run, 0);
+  })();
+
+  // Get sticker path based on stars quantity
+  function starsStickerPath(qty){
+    if (qty >= 2500) return '/static/stickers/12month_premium.tgs';
+    if (qty >= 1000) return '/static/stickers/6month_premium.tgs';
+    return '/static/stickers/3month_premium.tgs';
+  }
+
+  // Get sticker key for preloaded cache
+  function getStickerKey(qty){
+    if (qty >= 2500) return 'large';
+    if (qty >= 1000) return 'medium';
+    return 'small';
+  }
+
+  // Prevent default form navigation
+  const starsForm = document.querySelector('.js-stars-form');
+  if (starsForm){ starsForm.addEventListener('submit', (e)=>{ e.preventDefault(); /* Let Enter key handler do the search */ }); }
+
+  function getWrapByValue(v){
+    for (const inp of radios){ if (parseInt(inp.value,10)===v){ return inp.closest('.tm-form-radio-item-wrap'); } }
+    return null;
+  }
+  // Put pinned [50,500,2500] on top and collapse others until expanded
+  function reorderAndCollapse(){
+    if (!radioWrap) return;
+    // Pull pinned nodes into a fragment in ascending order, then prepend once
+    const frag = document.createDocumentFragment();
+    PINNED.forEach(v => { const w = getWrapByValue(v); if (w) frag.appendChild(w); });
+    if (frag.childNodes.length){ radioWrap.insertBefore(frag, radioWrap.firstElementChild); }
+    // Refresh radios and hide non-pinned until expanded
+    radios = $$('input.radio[name="stars"]');
+    radios.forEach(inp => {
+      const wrap = inp.closest('.tm-form-radio-item-wrap');
+      const v = parseInt(inp.value,10);
+      if (!PINNED.includes(v) && wrap && !wrap.classList.contains('tm-more-options')){
+        wrap.style.display = 'none';
+      }
+    });
+  }
+
+  function getValueFromWrap(wrap){
+    const inp = wrap ? wrap.querySelector('input.radio[name="stars"]') : null;
+    return inp ? parseInt(inp.value, 10) : Number.MAX_SAFE_INTEGER;
+  }
+  function restoreFullOrder(){
+    if (!radioWrap) return;
+    const wraps = Array.from(radioWrap.querySelectorAll('.tm-form-radio-item-wrap'))
+      .filter(w => !w.classList.contains('tm-more-options'));
+    wraps.sort((a,b)=> getValueFromWrap(a) - getValueFromWrap(b));
+    const frag = document.createDocumentFragment();
+    wraps.forEach(w => frag.appendChild(w));
+    // Insert before the moreRow to keep DOM clean
+    if (moreRow) radioWrap.insertBefore(frag, moreRow);
+    else radioWrap.appendChild(frag);
+    radios = $$('input.radio[name="stars"]');
+  }
+  reorderAndCollapse();
+
+  if (moreBtn) {
+    moreBtn.addEventListener('click', () => {
+      const form = document.querySelector('.js-stars-form');
+      if (form) form.classList.remove('options-collapsed');
+      restoreFullOrder();
+      radios.forEach(inp => inp.closest('.tm-form-radio-item-wrap').style.display = '');
+      if (moreRow) moreRow.style.display = 'none';
+    });
+  }
+
+  // Lightweight styles for the preview box to match Fragment proportions
+  const styleTag = document.createElement('style');
+  styleTag.textContent = `
+
+    .btn-progress{position:relative;pointer-events:none}
+    .btn-progress .tm-button-label{opacity:.95}
+    .btn-progress::after{content:'';position:absolute;right:16px;top:50%;width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;transform:translateY(-50%);animation:spinBtn .8s linear infinite}
+    @keyframes spin{from{transform:rotate(0deg)} to{transform:rotate(360deg)}}
+    @keyframes spinBtn{from{transform:translateY(-50%) rotate(0deg)} to{transform:translateY(-50%) rotate(360deg)}}
+    .popup-loading{position:absolute;inset:0;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;border-radius:18px}
+    .popup-loading .spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite}
+    
+    /* Loading spinner animation */
+    .tm-search-loading{display:none}
+    .loading .tm-search-loading{display:block}
+    .loading .tm-search-clear{display:none}
+    .circle-progress-wrap{width:22px;height:22px}
+    .circle-progress{fill:none;stroke:#248bda;stroke-width:2.5;stroke-dasharray:62;stroke-dashoffset:62;animation:circle-progress 1.2s linear infinite;stroke-linecap:round}
+    @keyframes circle-progress{0%{stroke-dashoffset:62}100%{stroke-dashoffset:0}}
+  `;
+  document.head.appendChild(styleTag);
+
+  function sanitize(u){ u=(u||'').trim(); if (u.startsWith('@')) u=u.slice(1); return u; }
+  
+  // Helper to extract username from various formats
+  function extractUsername(input) {
+    if (!input) return '';
+    
+    // Remove leading/trailing whitespace
+    let username = input.trim();
+    
+    // Handle different URL formats
+    if (username.includes('t.me/')) {
+      username = username.split('t.me/')[1];
+    }
+    if (username.includes('telegram.me/')) {
+      username = username.split('telegram.me/')[1];
+    }
+    
+    // Remove @ symbol if present
+    username = username.replace(/^@/, '');
+    
+    // Remove any query parameters or fragments
+    username = username.split('?')[0].split('#')[0];
+    
+    return username;
+  }
+  function decodeHtml(s){ const e=document.createElement('textarea'); e.innerHTML=s||''; return e.value; }
+  function parsePhoto(html){ const m=/src=\"([^\"]+)/.exec(html||''); return m&&m[1] ? m[1] : ''; }
+
+  // Manage search field visual states like Fragment
+  function setSearchState(state, avatar){
+    if (!searchField) return;
+    searchField.classList.remove('loading','play','found','error');
+    if (state === 'loading'){
+      searchField.classList.add('loading', 'play');
+      if (loading) loading.style.display='inline-block';
+      if (clearBtn) clearBtn.style.display='none'; // Hide X button during loading
+      if (errorEl) errorEl.textContent='';
+    } else {
+      if (loading) loading.style.display='none';
+      if (clearBtn) clearBtn.style.display='inline-block'; // Show X button when not loading
+    }
+    if (state === 'found'){
+      searchField.classList.add('found');
+      if (photo) photo.innerHTML = avatar ? `<img src="${avatar}" alt="">` : '';
+      if (searchInput) searchInput.disabled = true;
+    } else {
+      if (photo) photo.innerHTML = '';
+      if (searchInput) searchInput.disabled = false;
+    }
+    if (state === 'error'){
+      searchField.classList.add('error');
+    }
+  }
+
+  function effectiveQty(){
+    const checked = radios.find(r => r.checked);
+    if (checked) return parseInt(checked.value,10);
+    const typed = parseInt((qtyInput && qtyInput.value)||'0',10);
+    return Number.isFinite(typed) ? typed : 0;
+  }
+
+  function resolveSearchError(res){
+    if (!res) return I18N.errUserNotFound;
+    
+    // Safe error messages only
+    const safeErrors = {
+      'user not found': I18N.errUserNotFound,
+      'invalid username': I18N.errInvalidUsername,
+      'user not available': I18N.errUserNotAvailable,
+      'rate limit': I18N.errRateLimit,
+      'network error': I18N.errNetwork,
+      'server error': I18N.errServer
+    };
+    
+    const msg = (res.detail || res.error || res.message || '').toLowerCase();
+    
+    // Check for safe error messages
+    for (const [key, safeMsg] of Object.entries(safeErrors)) {
+      if (msg.includes(key)) {
+        return safeMsg;
+      }
+    }
+    
+    // Default safe message
+    return I18N.errUserNotFound;
+  }
+  const MAX_QTY = 10000;
+  // Static UZS prices for specific packages
+  const STATIC_UZS = {
+    50: 12999,
+    75: 19999,
+    100: 25999,
+    150: 38999,
+    250: 64999,
+    350: 90999,
+    500: 129999,
+    750: 194999,
+    1000: 259999,
+    1500: 389999,
+    2500: 649999,
+    5000: 1299999,
+    10000: 2599999,
+  };
+  // Static USD prices for popup preview
+  const STATIC_USD = {
+    50: 0.75,
+    75: 1.13,
+    100: 1.50,
+    150: 2.25,
+    250: 3.75,
+    350: 5.25,
+    500: 7.50,
+    750: 11.25,
+    1000: 15.00,
+    1500: 22.50,
+    2500: 37.50,
+    5000: 75.00,
+    10000: 150.00,
+  };
+  function formatUsd(value){ if(!isFinite(value)) return ''; return Number(value).toFixed(2); }
+  function isQtyValid(q){ return q>=50 && q<=MAX_QTY; }
+
+  function formatUzs(v){
+    const n = Math.round(v);
+    const parts = n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return `${parts},00`;
+  }
+
+  function priceUzsForQty(q){
+    if (STATIC_UZS[q]) return STATIC_UZS[q];
+    // 260 so'm/Star, chiroyli ko'rinish uchun 999 bilan tugaydi
+    const rate = 260;
+    const raw = q * rate;
+    const rounded = Math.ceil(raw / 1000) * 1000 - 1; // ...999 ko'rinishida
+    return Math.max(rounded, 0);
+  }
+
+  function renderCurPrice(qty){
+    if (!curPriceEl) return;
+    if (!qty || !isQtyValid(qty)) { curPriceEl.innerHTML = ''; return; }
+    const uzs = priceUzsForQty(qty);
+    curPriceEl.innerHTML = `<div class="tm-value tm-uzs">${formatUzs(uzs)} UZS</div>`;
+  }
+
+  function updateBuyButton(){
+    const qty = effectiveQty();
+    const ok = !!foundRecipient && isQtyValid(qty);
+    // Button is always enabled now - we check username on click instead
+    if (buyBtn) buyBtn.disabled = false;
+    if (buyBtnLabel) buyBtnLabel.textContent = ok ? `${"Xarid qilish"} ${qty.toLocaleString()} ${"Telegram Yulduzlari"}` : I18N.buyTelegramStars;
+
+    // Show price only for typed input (not for package radios)
+    const anyRadioChecked = radios.some(r => r.checked);
+    const typedRaw = (qtyInput && qtyInput.value || '').trim();
+    const typed = parseInt(typedRaw||'0', 10);
+    const showTypedPrice = !!typedRaw && !anyRadioChecked && isQtyValid(typed);
+    if (curPriceEl){
+      if (showTypedPrice) { renderCurPrice(typed); }
+      else { curPriceEl.innerHTML = ''; }
+    }
+  }
+
+  // Package selection clears typed amount and vice versa
+  radios.forEach(r => {
+    r.addEventListener('change', () => {
+      if (qtyInput) qtyInput.value = '';
+      if (qtyErrorEl) qtyErrorEl.textContent = '';
+      if (curPriceEl) curPriceEl.innerHTML = '';
+      updateBuyButton();
+    });
+  });
+  if (qtyInput){
+    qtyInput.addEventListener('input', () => {
+      radios.forEach(r => r.checked = false);
+      if (qtyErrorEl) qtyErrorEl.textContent = '';
+      // sanitize to digits only and clamp
+      const raw = (qtyInput && qtyInput.value) || '';
+      const cleaned = raw.replace(/[^0-9]/g, '');
+      if (raw !== cleaned) qtyInput.value = cleaned;
+      let typed = parseInt(cleaned||'0',10);
+      if (Number.isFinite(typed)){
+        if (typed > MAX_QTY) { typed = MAX_QTY; qtyInput.value = String(MAX_QTY); }
+        if (typed < 0) typed = 0;
+      } else {
+        typed = 0;
+      }
+      // show error if over limit
+      if (parseInt(cleaned||'0',10) > MAX_QTY && qtyErrorEl){
+        qtyErrorEl.textContent = I18N.upToLimit;
+      }
+      if (typed > MAX_QTY && qtyErrorEl){
+        qtyErrorEl.textContent = I18N.upToLimit;
+      }
+      updateBuyButton();
+    });
+
+    // Block non-digit keys (ex: e, E, +, -, ., etc.)
+    qtyInput.addEventListener('keydown', (e) => {
+      const allowedCtrl = e.ctrlKey || e.metaKey || e.altKey;
+      if (allowedCtrl) return; // allow copy/paste/select all shortcuts
+      const navKeys = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter'];
+      if (navKeys.includes(e.key)) return;
+      if (/^[0-9]$/.test(e.key)) return; // allow digits
+      // everything else is blocked
+      e.preventDefault();
+    });
+
+    // Sanitize pasted content to digits only
+    qtyInput.addEventListener('paste', (e) => {
+      const data = (e.clipboardData || window.clipboardData).getData('text');
+      const digits = (data || '').replace(/\D/g, '');
+      if (digits !== data){
+        e.preventDefault();
+        const start = qtyInput.selectionStart || 0;
+        const end = qtyInput.selectionEnd || 0;
+        const v = qtyInput.value || '';
+        qtyInput.value = v.slice(0, start) + digits + v.slice(end);
+        qtyInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    });
+
+    // Prevent dropping non-text or files into the field
+    qtyInput.addEventListener('drop', (e) => { e.preventDefault(); });
+  }
+  if (qtyClearBtn){
+    qtyClearBtn.addEventListener('click', ()=>{
+      if (qtyInput) qtyInput.value='';
+      radios.forEach(r => r.checked = false);
+      if (qtyErrorEl) qtyErrorEl.textContent = '';
+      if (curPriceEl) curPriceEl.innerHTML = '';
+      updateBuyButton();
+    });
+  }
+
+  if (clearBtn){
+    clearBtn.addEventListener('click', () => {
+      foundRecipient = null; foundName = null; foundPhoto = null; foundNameRaw = null;
+      if (errorEl){ errorEl.textContent=''; }
+      if (searchInput){ searchInput.value=''; searchInput.focus(); }
+      setSearchState('idle');
+      updateBuyButton();
+      // Show "Buy for myself" when input cleared
+      if (myselfLink) myselfLink.style.display = '';
+    });
+  }
+  // Helper function to show popup
+  function showUsernamePopup() {
+    try {
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const message = I18N.usernameRequiredMessage || "Iltimos, Telegram username qo'shing va ilovani qayta oching.";
+      
+      if (tg && tg.showPopup) {
+        tg.showPopup({
+          title: 'Tez Star',
+          message: message,
+          buttons: [{ type: 'ok' }]
+        });
+        return;
+      }
+      if (tg && tg.showAlert) {
+        tg.showAlert(message);
+        return;
+      }
+    } catch (_) {}
+    alert(I18N.usernameRequiredMessage || "Iltimos, Telegram username qo'shing va ilovani qayta oching.");
+  }
+
+  // Popup for missing input username (simpler text)
+  function showEnterUsernamePopup() {
+    const message = I18N.errUsernameRequired || "Iltimos, Telegram username kiriting";
+    try {
+      const tg = window.Telegram && window.Telegram.WebApp;
+      if (tg && tg.showPopup) {
+        tg.showPopup({ title: 'Tez Star', message, buttons: [{ type: 'ok' }] });
+        return;
+      }
+      if (tg && tg.showAlert) {
+        tg.showAlert(message);
+        return;
+      }
+    } catch (_) {}
+    alert(message);
+  }
+
+  if (myselfLink){
+    myselfLink.addEventListener('click', (e)=>{
+      e.preventDefault();
+      const hasUsername = myselfLink.getAttribute('data-has-username') === 'true';
+      
+      // Check if username exists
+      if (!hasUsername) {
+        showUsernamePopup();
+        return;
+      }
+      
+      const uname = myselfLink.getAttribute('data-self-username');
+      if (!uname) {
+        showUsernamePopup();
+        return;
+      }
+      
+      // Clear manually to avoid focus
+      foundRecipient = null; foundName = null; foundPhoto = null; foundNameRaw = null;
+      if (errorEl) errorEl.textContent = '';
+      if (searchInput){ 
+        searchInput.disabled = false; 
+        searchInput.value = uname; 
+        searchInput.blur(); // Remove focus
+      }
+      setSearchState('idle');
+      originalQuery = uname; // Store the original username
+      updateBuyButton();
+      doSearch();
+      // Hide the "Buy for myself" button after clicking
+      myselfLink.style.display = 'none';
+    });
+  }
+
+  if (searchInput){
+    // Search on Enter key press
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter'){ 
+        e.preventDefault(); 
+        const query = sanitize(searchInput.value);
+        if (query && query.length >= 3) {
+          doSearch();
+        }
+      }
+    });
+
+    // Search when user finishes typing (blur event)
+    searchInput.addEventListener('blur', () => {
+      if (isUpdatingInput) return; // Don't search if we're updating the input value
+      const query = sanitize(searchInput.value);
+      if (query && query.length >= 3) {
+        doSearch();
+      }
+    });
+
+    // Clear state when input is manually cleared
+    searchInput.addEventListener('input', (e) => {
+      const query = sanitize(e.target.value);
+      if (!query) {
+        // Clear state when input is empty
+        foundRecipient = null; foundName = null; foundPhoto = null; foundNameRaw = null; originalQuery = null; originalUsername = null;
+        if (errorEl) errorEl.textContent = '';
+        setSearchState('idle');
+        updateBuyButton();
+        // Show "Buy for myself" button when input is empty
+        if (myselfLink) myselfLink.style.display = '';
+      } else {
+        // Hide "Buy for myself" button if user types their own username
+        const selfUsername = myselfLink ? myselfLink.getAttribute('data-self-username') : null;
+        const isForMyself = selfUsername && query.toLowerCase() === selfUsername.toLowerCase().replace('@', '');
+        if (isForMyself) {
+          if (myselfLink) myselfLink.style.display = 'none';
+        } else {
+          if (myselfLink) myselfLink.style.display = '';
+        }
+      }
+    });
+  }
+
+  async function call(path, data){
+    const doFetch = (window.authFetch || fetch);
+    const r = await doFetch(`${apiBase}${path}`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    const t = await r.text();
+    try { return JSON.parse(t); } catch { return { raw:t }; }
+  }
+
+  function openPopup(){
+    if (!popup) return;
+    const qty = effectiveQty();
+    const name = foundName || sanitize(searchInput.value) || 'recipient';
+    const uzs = priceUzsForQty(qty);
+    const usd = STATIC_USD[qty] ? STATIC_USD[qty] : (qty * 0.015);
+    
+    // Check if this is for "myself" - compare with original query, not found name
+    const selfUsername = myselfLink ? myselfLink.getAttribute('data-self-username') : null;
+    const isForMyself = selfUsername && originalQuery && originalQuery.toLowerCase() === selfUsername.toLowerCase().replace('@', '');
+    
+    
+    if (popupBtnLabel) popupBtnLabel.textContent = `${"Yulduzlarni sotib olish —"} ${name}`;
+    if (popupNameSpan) popupNameSpan.textContent = name;
+    if (popupContent){
+      if (isForMyself) {
+        const firstLine = "O‘zingiz uchun {qty} Yulduzlarini sotib olmoqchimisiz?".replace('{qty}', qty.toLocaleString());
+        const receiveLine = "Quyidagi kabi xabar olasiz";
+        popupContent.innerHTML = `
+          <p class="popup-text">${firstLine}</p>
+          <p class="popup-text">${receiveLine}:</p>
+
+          <div class="tm-gift-premium-preview">
+          <div class="preview-sender-name preview-sender-hidden">Anonim</div>
+            <div class="preview-sender-name preview-sender-shown">Anonim</div>
+            <div class="preview-sender-text">sizga sovg‘a yubordi — $${formatUsd(usd)}</div>
+            <picture class="preview-sticker js-preview-sticker" style="width:144px;height:144px;">
+              <div id="tgs-sticker" style="width:144px;height:144px;"></div>
+            </picture>
+            <div class="preview-gift-text">${qty.toLocaleString()} Telegram Yulduzlari</div>
+            <div class="preview-gift-desc">kontent va xizmatlarni ochish uchun</div>
+          </div>`;
+      } else {
+        const nameBold = `<b>${name}</b>`;
+        const firstLine = "{name} uchun {qty} Yulduzlarini sotib olmoqchimisiz?".replace('{name}', nameBold).replace('{qty}', qty.toLocaleString());
+        const receiveLine = "{name} quyidagi kabi xabar oladi".replace('{name}', nameBold);
+        popupContent.innerHTML = `
+          <p class="popup-text">${firstLine}</p>
+          <p class="popup-text">${receiveLine}:</p>
+
+          <div class="tm-gift-premium-preview">
+          <div class="preview-sender-name preview-sender-hidden">Anonim</div>
+            <div class="preview-sender-name preview-sender-shown">Anonim</div>
+
+            <div class="preview-sender-text">sizga sovg‘a yubordi — $${formatUsd(usd)}</div>
+            <picture class="preview-sticker js-preview-sticker" style="width:144px;height:144px;">
+              <div id="tgs-sticker" style="width:144px;height:144px;"></div>
+            </picture>
+            <div class="preview-gift-text">${qty.toLocaleString()} Telegram Yulduzlari</div>
+            <div class="preview-gift-desc">kontent va xizmatlarni ochish uchun</div>
+          </div>`;
+      }
+      (async function(){
+        try{
+          const el = document.getElementById('tgs-sticker');
+          if (!el) return;
+          if (stickerAnimation) { try { stickerAnimation.destroy(); } catch(_){} stickerAnimation = null; }
+          const stickerKey = getStickerKey(qty);
+          let animData = preloadedStickers[stickerKey];
+          if (!animData){
+            const res = await fetch(starsStickerPath(qty));
+            const buf = await res.arrayBuffer();
+            const jsonStr = new TextDecoder().decode(pako.inflate(new Uint8Array(buf)));
+            animData = JSON.parse(jsonStr);
+            preloadedStickers[stickerKey] = animData;
+          }
+          stickerAnimation = lottie.loadAnimation({ container: el, loop: false, autoplay: true, animationData: animData });
+          el.style.cursor = 'pointer';
+          el.addEventListener('click', () => { if (stickerAnimation) { stickerAnimation.goToAndPlay(0, true); } });
+        }catch(_){
+          const el = document.getElementById('tgs-sticker');
+          if (el) el.innerHTML = '<img src="https://telegram.org/img/tgs/Stars120.gif" alt="stars" style="width:160px;height:160px;display:block;margin:0 auto;"/>';
+        }
+      })();
+    }
+    popup.classList.remove('hide');
+  }
+  function closePopup(){ if (popup) popup.classList.add('hide'); if (stickerAnimation) { try { stickerAnimation.destroy(); } catch(_){} stickerAnimation = null; } }
+  if (popup){
+    popup.addEventListener('click', (e)=>{ if (!e.target.closest('.popup-body')) closePopup(); });
+  }
+  if (popupClose){ popupClose.addEventListener('click', closePopup); }
+  if (popupForm){
+    popupForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const btn = popupForm.querySelector('button[type="submit"]');
+      const qty = effectiveQty();
+      const query = foundRecipient || sanitize(searchInput.value);
+      if (!query || !isQtyValid(qty)){
+        if (qty > MAX_QTY && qtyErrorEl){ qtyErrorEl.textContent = I18N.upToLimit; }
+        return;
+      }
+      // Create order with selected/default provider (modal was shown on main button if needed)
+      if (btn) btn.classList.add('btn-progress');
+      const overlay = document.createElement('div'); overlay.className='popup-loading'; overlay.innerHTML='<div class="spinner hidden"></div>';
+      const popupBox = popup.querySelector('.popup'); if (popupBox) popupBox.appendChild(overlay);
+      try{
+        if (window.ensureAuth) { try{ await window.ensureAuth(); }catch(_){ } }
+        var tg = window.Telegram && window.Telegram.WebApp; var tgid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || null;
+        var initData = (tg && tg.initData) ? tg.initData : '';
+      const method = isValidPaymentMethod(selectedPayMethod)
+        ? selectedPayMethod
+        : (isValidPaymentMethod(storedDefaultMethod)
+            ? storedDefaultMethod
+            : (readLocalPaymentDefault() || 'payme'));
+        const headers = { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': (window.getCSRFToken && window.getCSRFToken()) || ''
+        };
+        if (initData) {
+          headers['X-Telegram-Init-Data'] = initData;
+        }
+        const resp = await (window.authFetch||fetch)('/api/orders/create', {
+          method: 'POST', 
+          headers: headers,
+          body: JSON.stringify({ product_type:'stars', stars_qty: qty, recipient: foundRecipient || query, recipient_username: originalUsername || query, recipient_name: foundNameRaw || null, recipient_photo: foundPhoto || null, payment_method: method, telegram_id: tgid })
+        });
+        let data = await resp.json().catch(()=>({}));
+        if (resp.ok && data && data.public_id){ window.location.href = `/orders/${data.public_id}`; return; }
+      } finally {
+        if (btn) btn.classList.remove('btn-progress');
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+      }
+    });
+  }
+
+  function fadeOutPopup(){
+    if (!popup) return;
+    popup.style.transition = 'opacity .25s ease, transform .25s ease';
+    popup.querySelector('.popup').style.transition = 'opacity .25s ease, transform .25s ease';
+    popup.querySelector('.popup').style.transform = 'translateY(8px)';
+    popup.style.opacity = '0';
+    setTimeout(()=>{ closePopup(); popup.style.opacity=''; popup.querySelector('.popup').style.transform=''; }, 250);
+  }
+
+  // Simple toast at the bottom center
+  function showToast(title, message){
+    const toast = document.createElement('div');
+    toast.style.position = 'fixed';
+    toast.style.left = '50%';
+    toast.style.bottom = '24px';
+    toast.style.transform = 'translateX(-50%)';
+    toast.style.background = 'rgba(10,12,16,.95)';
+    toast.style.border = '1px solid rgba(255,255,255,.08)';
+    toast.style.color = '#e6edf3';
+    toast.style.padding = '12px 16px';
+    toast.style.borderRadius = '12px';
+    toast.style.boxShadow = '0 8px 24px rgba(0,0,0,.35)';
+    toast.style.zIndex = '9999';
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity .2s ease, transform .2s ease';
+    toast.innerHTML = `<div style="font-weight:800;">${title}</div><div style="opacity:.8; font-size:13px;">${message}</div>`;
+    document.body.appendChild(toast);
+    requestAnimationFrame(()=>{ toast.style.opacity='1'; });
+    setTimeout(()=>{
+      toast.style.opacity='0'; toast.style.transform='translateY(4px)';
+      setTimeout(()=> toast.remove(), 220);
+    }, 3200);
+  }
+
+  async function doSearch(){
+    // Prevent concurrent searches
+    if (isSearching) return;
+    
+    const query = sanitize(searchInput.value);
+    if (!query) return;
+    
+    isSearching = true;
+    originalQuery = query; // Store the original query for "myself" comparison
+    originalUsername = extractUsername(searchInput.value); // Store original username
+    setSearchState('loading');
+    const qty = effectiveQty() || 50;
+    
+    try {
+      const res = await call('/stars/search/', { query, quantity: qty });
+
+      if (res && res.ok && res.found){
+        foundRecipient = res.found.recipient || query;
+        foundNameRaw = res.found.name || query; // Store raw HTML encoded name
+        foundName = decodeHtml(foundNameRaw); // Store decoded name for display
+        foundPhoto = res.found.photo; // Store raw HTML photo string
+        const src = parsePhoto(res.found.photo);
+        if (searchInput){ 
+          isUpdatingInput = true; // Set flag before updating
+          searchInput.value = foundName; 
+          setTimeout(() => { isUpdatingInput = false; }, 100); // Reset flag after a short delay
+        }
+        setSearchState('found', src);
+        updateBuyButton();
+      } else {
+        foundRecipient = null; foundName = null; foundPhoto = null; foundNameRaw = null;
+        if (errorEl) errorEl.textContent = resolveSearchError(res);
+        setSearchState('error');
+        updateBuyButton();
+      }
+    } catch (error) {
+      foundRecipient = null; foundName = null; foundPhoto = null; foundNameRaw = null;
+      if (errorEl) errorEl.textContent = I18N.searchFailed;
+      setSearchState('error');
+      updateBuyButton();
+    } finally {
+      isSearching = false; // Always reset flag
+    }
+  }
+
+  // Preferred payment method handling
+  let selectedPayMethod = 'payme';
+  function openPayMethodModal(onContinue, initialMethod){
+    const m = document.getElementById('payModal'); if (!m) return;
+    const overlayEl = document.getElementById('payOverlay');
+    const opts = Array.from(m.querySelectorAll('.pay-opt'));
+    let current = isValidPaymentMethod(initialMethod) ? initialMethod : (isValidPaymentMethod(storedDefaultMethod) ? storedDefaultMethod : 'payme');
+    const setChecked = (el)=>{ opts.forEach(o=> o.setAttribute('aria-checked','false')); el.setAttribute('aria-checked','true'); current = el.getAttribute('data-method')||'payme'; };
+    opts.forEach(o=>{ o.onclick = ()=> setChecked(o); });
+    const init = opts.find(o=> (o.getAttribute('data-method')||'')===current) || opts[0];
+    if (init) setChecked(init);
+    const close = ()=> m.classList.remove('show');
+    if (overlayEl) overlayEl.onclick = close;
+    m.classList.add('show');
+    const cont = document.getElementById('payContinue');
+    const save = document.getElementById('paySetDefault');
+    const hint = document.getElementById('payHint');
+    if (!cont) return;
+    if (save){
+      save.checked = false;
+      if (hint) hint.style.display = 'none';
+      save.onchange = ()=>{ if (hint) hint.style.display = save.checked ? 'block' : 'none'; };
+    } else if (hint){
+      hint.style.display = 'none';
+    }
+    cont.onclick = ()=>{
+      selectedPayMethod = current;
+      if (save && save.checked){
+        storedDefaultMethod = current;
+        try{ localStorage.setItem('ts_pay_default', current); }catch(_){ }
+        try{
+          var tg = window.Telegram && window.Telegram.WebApp;
+          var tgid = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.id) || null;
+          var body = JSON.stringify({ method: current, telegram_id: tgid });
+          (window.authFetch||fetch)('/api/user/payment-default', { method:'POST', headers:{'Content-Type':'application/json'}, body }).catch(function(){});
+        }catch(_){ }
+        defaultMethodPromise = Promise.resolve(storedDefaultMethod);
+      }
+      close();
+      if (typeof onContinue==='function') onContinue();
+    };
+  }
+
+  if (buyBtn){
+    buyBtn.addEventListener('click', () => {
+      // Check if username is entered
+      if (!foundRecipient) {
+        // Show notification using Telegram haptic feedback if available
+        if (window.Telegram && window.Telegram.WebApp) {
+          try {
+            window.Telegram.WebApp.HapticFeedback.notificationOccurred('error');
+          } catch(e) {}
+        }
+        // Show popup for clearer error visibility (simple text)
+        showEnterUsernamePopup();
+        
+        // Show error message
+        if (errorEl) {
+          errorEl.textContent = I18N.errUsernameRequired;
+          // Clear error after 3 seconds
+          setTimeout(() => {
+            if (errorEl) errorEl.textContent = '';
+          }, 3000);
+        }
+        
+        // Scroll to error/search field to make error visible
+        if (searchField) {
+          searchField.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else if (errorEl) {
+          errorEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        // Focus on username input
+        if (searchInput) {
+          searchInput.focus();
+          // Add a visual shake effect
+          if (searchField) {
+            searchField.classList.add('error');
+            setTimeout(() => {
+              if (searchField) searchField.classList.remove('error');
+            }, 500);
+          }
+        }
+        return;
+      }
+      
+      // Check if quantity is valid
+      const qty = effectiveQty();
+      if (!isQtyValid(qty)) {
+        return;
+      }
+      
+      ensureDefaultPaymentMethod().catch(()=>null).then(()=>{
+        const initial = isValidPaymentMethod(storedDefaultMethod) ? storedDefaultMethod : 'payme';
+        openPayMethodModal(openPopup, initial);
+      });
+    });
+  }
+
+  document.querySelectorAll('.tm-form-radio-item').forEach(lbl=>{
+    const input = lbl.querySelector('input.radio[name="stars"]'); if(!input) return;
+    const qty = parseInt(input.value,10);
+    const uzs = priceUzsForQty(qty);
+    const valueEl = lbl.querySelector('.tm-value');
+    const usdEl = lbl.querySelector('.tm-radio-desc');
+    if (valueEl){ valueEl.classList.remove('icon-before','icon-ton'); valueEl.classList.add('tm-uzs'); valueEl.innerHTML = `${formatUzs(uzs)} UZS`; }
+    if (usdEl){ usdEl.textContent = ''; }
+  });
+
+  updateBuyButton();
+})();
+</script>
+<script>
+// Lazy video loading with Intersection Observer
+(function() {
+  const lazyVideos = document.querySelectorAll('.js-lazy-video');
+  
+  if ('IntersectionObserver' in window) {
+    const videoObserver = new IntersectionObserver(function(entries, observer) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          const video = entry.target;
+          const videoSrc = video.getAttribute('data-src');
+          
+          if (videoSrc) {
+            // Create source element
+            const source = document.createElement('source');
+            source.src = videoSrc;
+            source.type = 'video/mp4';
+            video.appendChild(source);
+            
+            // Load video
+            video.load();
+            
+            // Try to play (with error handling)
+            video.play().catch(function(error) {
+              console.log('Video autoplay failed:', error);
+              // Video will show poster image if autoplay fails
+            });
+            
+            // Remove observer after loading
+            observer.unobserve(video);
+          }
+        }
+      });
+    }, {
+      rootMargin: '50px' // Start loading 50px before video enters viewport
+    });
+    
+    lazyVideos.forEach(function(video) {
+      videoObserver.observe(video);
+    });
+  } else {
+    // Fallback for browsers without IntersectionObserver
+    lazyVideos.forEach(function(video) {
+      const videoSrc = video.getAttribute('data-src');
+      if (videoSrc) {
+        const source = document.createElement('source');
+        source.src = videoSrc;
+        source.type = 'video/mp4';
+        video.appendChild(source);
+        video.load();
+      }
+    });
+  }
+  
+  // Error handling - show poster image if video fails to load
+  lazyVideos.forEach(function(video) {
+    video.addEventListener('error', function() {
+      const poster = video.getAttribute('poster');
+      if (poster) {
+        const img = video.querySelector('img');
+        if (img) {
+          img.style.display = 'block';
+          video.style.display = 'none';
+        }
+      }
+    });
+  });
+})();
+</script>
+
+  </body>
+</html>
+
+
